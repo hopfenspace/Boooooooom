@@ -8,12 +8,8 @@ class ShiftRegister7648:
 
     def __init__(self, serial, clock, clear):
         self._serial = Pin(serial, Pin.OUT)
-        self._clock = Pin(clock, Pin.OUT)
-        self._clear = Pin(clear, Pin.OUT)
-
-        self._serial.off()
-        self._clock.off()
-        self._clear.on()
+        self._clock = Pin(clock, Pin.OUT, value=0)
+        self._clear = Pin(clear, Pin.OUT, value=1)
 
     def clear(self):
         self._clear.off()
