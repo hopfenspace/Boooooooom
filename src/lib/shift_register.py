@@ -19,6 +19,7 @@ class ShiftRegister7648:
         self._clear.off()
         sleep_us(self.clock_cycle)
         self._clear.on()
+        sleep_us(self.clock_cycle)
 
     def write_bit(self, bit):
         if bit:
@@ -28,6 +29,7 @@ class ShiftRegister7648:
         self._clock.on()
         sleep_us(self.clock_cycle)
         self._clock.off()
+        sleep_us(self.clock_cycle)
 
     def write_byte(self, byte):
         for i in range(8):
