@@ -3,19 +3,21 @@ import random
 
 from machine import Pin
 
+from morse import Morse
+
+
+class Difficulty:
+    EASY = 320
+    NORMAL = 160
+    HARD = 80
+    EXPERT = 40
+    PREPARE_2_DIE = 20
+
 
 class MorseReadGame:
     def __init__(self, *, difficulty, wordlist_count):
         self.difficulty = difficulty
         self.wordlist_count = wordlist_count
-
-        self.international_morse_code = {
-            "a": ".-", "b": "-...", "c": "-.-.", "d": "-..", "e": ".", "f": "..-.", "g": "--.", "h": "....",
-            "i": "..", "j": ".---", "k": "-.-", "l": ".-..", "m": "--", "n": "-.", "o": "---", "p": ".--.",
-            "q": "--.-", "r": ".-.", "s": "...", "t": "-", "u": "..-", "v": "...-", "w": ".--", "x": "-..-",
-            "y": "-.--", "z": "--..", "1": ".----", "2": "..---", "3": "...--", "4": "....-", "5": ".....",
-            "6": "-....", "7": "--...", "8": "---..", "9": "----.", "0": "-----", " ": "/"
-        }
 
         wordlist = self._get_wordlist()
         frequency_list = set()
@@ -28,7 +30,9 @@ class MorseReadGame:
         [self.wordlist_lookup.__setitem__(wordlist[x], self.frequency_list[x]) for x in range(len(wordlist))]
         self.chosen_one = wordlist[random.randint(0, self.wordlist_count)]
 
-        self.led_morse = Pin(16, Pin.OUT)
+        self.morse = Morse(unit_time=self.difficulty)
+
+        self.pin_morse_led = 16
         self.led_strike = Pin(17, Pin.OUT)
         self.led_solved = Pin(5, Pin.OUT)
 
@@ -70,41 +74,6 @@ class MorseReadGame:
                 time.sleep_ms(200)
                 self.led_strike.off()
 
-    def _dot(self):
-        self.led_morse.on()
-        time.sleep_ms(self.difficulty)
-        self.led_morse.off()
-
-    def _dash(self):
-        self.led_morse.on()
-        time.sleep_ms(self.difficulty*3)
-        self.led_morse.off()
-
-    def _pause_word(self):
-        time.sleep_ms(self.difficulty*7)
-
-    def _pause_intra_char(self):
-        time.sleep_ms(self.difficulty)
-
-    def _pause_inter_char(self):
-        time.sleep_ms(self.difficulty*3)
-
-    def _write_morse(self, sentence):
-        sentence = sentence.lower()
-        morse_sentence = [self.international_morse_code[x] for x in sentence]
-        for char in morse_sentence:
-            if "/" == char:
-                self._pause_word()
-            for x in range(len(char)):
-                if "." == char[x]:
-                    self._dot()
-                elif "-" == char[x]:
-                    self._dash()
-                if x == len(char)-1:
-                    self._pause_inter_char()
-                else:
-                    self._pause_intra_char()
-
     def _get_wordlist(self):
         with open("wordlist.txt") as fh:
             words = [x.strip() for x in fh.readlines()]
@@ -116,16 +85,12 @@ class MorseReadGame:
     def start(self):
         # TODO Display current self.current frequency
         while not self.solved:
-            self._write_morse(self.chosen_one)
-            self._pause_word()
+            self.morse.write_morse(
+                pin=self.pin_morse_led,
+                sentence=self.chosen_one,
+                end_with_word_pause=True
+            )
 
 
-"""
-EASY = 400
-NORMAL = 160
-HARD = 80
-EXPERT = 40
-PREPARE_2_DIE = 20
-"""
-g = MorseReadGame(difficulty=160, wordlist_count=16)
+g = MorseReadGame(difficulty=Difficulty.NORMAL, wordlist_count=16)
 g.start()
