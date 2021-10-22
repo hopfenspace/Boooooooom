@@ -1,4 +1,5 @@
 from time import sleep_us
+from machine import Pin
 
 
 class ShiftRegister7648:
@@ -6,9 +7,9 @@ class ShiftRegister7648:
     clock_cycle = 1  # microseconds
 
     def __init__(self, serial, clock, clear):
-        self._serial = serial
-        self._clock = clock
-        self._clear = clear
+        self._serial = Pin(serial, Pin.OUT)
+        self._clock = Pin(clock, Pin.OUT)
+        self._clear = Pin(clear, Pin.OUT)
 
         self._serial.off()
         self._clock.off()
