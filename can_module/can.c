@@ -449,8 +449,8 @@ STATIC mp_obj_t _read() {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(read_obj, _read);
 
-STATIC mp_obj_t *current_callback_obj = NULL;
-STATIC void _onReceive(int size) {
+mp_obj_t *current_callback_obj = NULL;
+void _onReceive(int size) {
     if (current_callback_obj) {
         mp_call_function_1(*current_callback_obj, mp_obj_new_int(size));
     }
@@ -460,7 +460,7 @@ STATIC mp_obj_t _setOnReceive(mp_obj_t callback_obj) {
         mp_raise_TypeError("Argument must be callable");
     } else {
         current_callback_obj = &callback_obj;
-        setOnReceive(&singleton, _onReceive);
+        setOnReceive(&singleton, &_onReceive);
     }
     return mp_const_none;
 }
