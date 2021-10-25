@@ -97,92 +97,48 @@ STATIC int begin(CanController *controller, int baudRate) {
     gpio_set_direction(controller->txPin, GPIO_MODE_OUTPUT);
     gpio_matrix_out(controller->txPin, CAN_TX_IDX, 0, 0);
     gpio_pad_select_gpio(controller->txPin);
-
+        
     // pelican mode
-    TWAI.clock_divider_reg.cm = 1;  //modifyRegister(REG_CDR, 0x80, 0x80);
-    // SJW = 1
-    TWAI.bus_timing_0_reg.sjw = 1;  //modifyRegister(REG_BTR0, 0xc0, 0x40);
-    // TSEG2 = 1
-    TWAI.bus_timing_1_reg.tseg2 = 1;    //modifyRegister(REG_BTR1, 0x70, 0x10);
+    twai_ll_enable_extended_reg_layout(&TWAI);
 
+    // set bus timing
+    uint32_t brp;
+    uint32_t sjw = 2;
+    uint32_t tseg1;
+    uint32_t tseg2 = 2;
+    bool triple_sampling = true;
     switch (baudRate) {
-        case BAUDRATE_1000E3:
-            TWAI.bus_timing_1_reg.tseg1 = 0x04;    //modifyRegister(REG_BTR1, 0x0f, 0x04);
-            TWAI.bus_timing_0_reg.brp = 4;  //modifyRegister(REG_BTR0, 0x3f, 4);
-            break;
-
-        case BAUDRATE_500E3:
-            TWAI.bus_timing_1_reg.tseg1 = 0x0c;    //modifyRegister(REG_BTR1, 0x0f, 0x0c);
-            TWAI.bus_timing_0_reg.brp = 4;  //modifyRegister(REG_BTR0, 0x3f, 4);
-            break;
-
-        case BAUDRATE_250E3:
-            TWAI.bus_timing_1_reg.tseg1 = 0x0c;    //modifyRegister(REG_BTR1, 0x0f, 0x0c);
-            TWAI.bus_timing_0_reg.brp = 9;  //modifyRegister(REG_BTR0, 0x3f, 9);
-            break;
-
-        case BAUDRATE_200E3:
-            TWAI.bus_timing_1_reg.tseg1 = 0x0c;    //modifyRegister(REG_BTR1, 0x0f, 0x0c);
-            TWAI.bus_timing_0_reg.brp = 12;  //modifyRegister(REG_BTR0, 0x3f, 12);
-            break;
-
-        case BAUDRATE_125E3:
-            TWAI.bus_timing_1_reg.tseg1 = 0x0c;    //modifyRegister(REG_BTR1, 0x0f, 0x0c);
-            TWAI.bus_timing_0_reg.brp = 19;  //modifyRegister(REG_BTR0, 0x3f, 19);
-            break;
-
-        case BAUDRATE_100E3:
-            TWAI.bus_timing_1_reg.tseg1 = 0x0c;    //modifyRegister(REG_BTR1, 0x0f, 0x0c);
-            TWAI.bus_timing_0_reg.brp = 24;  //modifyRegister(REG_BTR0, 0x3f, 24);
-            break;
-
-        case BAUDRATE_80E3:
-            TWAI.bus_timing_1_reg.tseg1 = 0x0c;    //modifyRegister(REG_BTR1, 0x0f, 0x0c);
-            TWAI.bus_timing_0_reg.brp = 30;  //modifyRegister(REG_BTR0, 0x3f, 30);
-            break;
-
-        case BAUDRATE_50E3:
-            TWAI.bus_timing_1_reg.tseg1 = 0x0c;    //modifyRegister(REG_BTR1, 0x0f, 0x0c);
-            TWAI.bus_timing_0_reg.brp = 49;  //modifyRegister(REG_BTR0, 0x3f, 49);
-            break;
-
-        /*
-        Due to limitations in ESP32 hardware and/or RTOS software, baudrate can't be lower than 50kbps.
-        See https://esp32.com/viewtopic.php?t=2142
-        */
-        default:
-            return 0;
-            break;
+        case BAUDRATE_1000E3: tseg1 =  5; brp =  10; break;
+        case BAUDRATE_500E3:  tseg1 = 13; brp =  10; break;
+        case BAUDRATE_250E3:  tseg1 = 13; brp =  20; break;
+        case BAUDRATE_200E3:  tseg1 = 13; brp =  26; break;
+        case BAUDRATE_125E3:  tseg1 = 13; brp =  40; break;
+        case BAUDRATE_100E3:  tseg1 = 13; brp =  50; break;
+        case BAUDRATE_80E3:   tseg1 = 13; brp =  62; break;
+        case BAUDRATE_50E3:   tseg1 = 13; brp = 100; break;
+        default: return 0; break;
+        //Due to limitations in ESP32 hardware and/or RTOS software, baudrate can't be lower than 50kbps.
+        //See https://esp32.com/viewtopic.php?t=2142
     }
+    twai_ll_set_bus_timing(&TWAI, brp, sjw, tseg1, tseg2, triple_sampling);
 
-    // SAM = 1
-    TWAI.bus_timing_1_reg.sam = 1;  //modifyRegister(REG_BTR1, 0x80, 0x80);
     // enable all interrupts
-    TWAI.interrupt_enable_reg.val = 255;   //writeRegister(REG_IER, 0xff);
+    twai_ll_set_enabled_intrs(&TWAI, 0xFF)
 
     // set filter to allow anything
-    for (int i = 0; i < 4; i++)
-        TWAI.acceptance_filter.acr[i].val = 0;   //writeRegister(REG_ACRn(0..3), 0x00);
-    for (int i = 0; i < 4; i++)
-        TWAI.acceptance_filter.amr[i].val = 255;   //writeRegister(REG_AMRn(0..3), 0xff);
+    twai_ll_set_acc_filter(&TWAI, 0x00, 0xFF, true);
 
-    // normal output mode
-    //TWAI.reserved_20 |= 2;
-    //TWAI.reserved_20 &= ~1;     //modifyRegister(REG_OCR, 0x03, 0x02);
     // reset error counters
-    TWAI.tx_error_counter_reg.val = 0;   //writeRegister(REG_TXERR, 0x00);
-    TWAI.rx_error_counter_reg.val = 0;   //writeRegister(REG_RXERR, 0x00);
+    twai_ll_set_rec(&TWAI, 0x00);
+    twai_ll_set_tec(&TWAI, 0x00);
 
     // clear errors and interrupts
-    TWAI.error_code_capture_reg.val;    //readRegister(REG_ECC);
-    TWAI.interrupt_reg.val;     //readRegister(REG_IR);
+    twai_ll_clear_err_code_cap(&TWAI);
+    twai_ll_get_and_clear_intrs(&TWAI);
 
     // normal mode
-    TWAI.mode_reg.afm = 1;  //modifyRegister(REG_MOD, 0x08, 0x08);
-    TWAI.mode_reg.rm = 0;   //modifyRegister(REG_MOD, 0x17, 0x00);
-    TWAI.mode_reg.lom = 0;  //
-    TWAI.mode_reg.stm = 0;  //
-    //TWAI.mode_reg.reserved4 &= ~1;
+    twai_ll_set_mode(&TWAI, TWAI_MODE_NORMAL);
+    twai_ll_exit_reset_mode(&TWAI);
 
     return 1;
 }
@@ -250,47 +206,35 @@ STATIC int endPacket(CanController *controller) {
     }
 
     // wait for TX buffer to free
-    while(TWAI.status_reg.tbs != 1) {   //while ((readRegister(REG_SR) & 0x04) != 0x04) {
+    while(TWAI.status_reg.tbs != 1) {
         yield();
     }
 
-    int dataReg;
+    uint32_t flags = 0;
     if (controller->txExtended) {
-        TWAI.tx_rx_buffer[0].val = 0x80 | (controller->txRtr ? 0x40 : 0x00) | (0x0f & controller->txLength);  //writeRegister(REG_EFF, 0x80 | (_txRtr ? 0x40 : 0x00) | (0x0f & _txLength));
-        TWAI.tx_rx_buffer[1].val = controller->txId >> 21;  //writeRegister(REG_EFF + 1, _txId >> 21);
-        TWAI.tx_rx_buffer[2].val = controller->txId >> 13;  //writeRegister(REG_EFF + 2, _txId >> 13);
-        TWAI.tx_rx_buffer[3].val = controller->txId >>  5;  //writeRegister(REG_EFF + 3, _txId >> 5);
-        TWAI.tx_rx_buffer[4].val = controller->txId <<  3;  //writeRegister(REG_EFF + 4, _txId << 3);
-
-        dataReg = 5;    //dataReg = REG_EFF + 5;
-    } else {
-        TWAI.tx_rx_buffer[0].val = (controller->txRtr ? 0x40 : 0x00) | (0x0f & controller->txLength); //writeRegister(REG_SFF, (_txRtr ? 0x40 : 0x00) | (0x0f & _txLength));
-        TWAI.tx_rx_buffer[1].val = controller->txId >> 3;   //writeRegister(REG_SFF + 1, _txId >> 3);
-        TWAI.tx_rx_buffer[2].val = controller->txId << 5;   //writeRegister(REG_SFF + 2, _txId << 5);
-
-        dataReg = 3;    //dataReg = REG_SFF + 3;
+        flags |= TWAI_MSG_FLAG_EXTD;
     }
-
-    for (int i = 0; i < controller->txLength; i++) {
-        TWAI.tx_rx_buffer[dataReg + i].val = controller->txData[i];    //writeRegister(dataReg + i, _txData[i]);
+    if (controller->txRtr) {
+        flags |= TWAI_MSG_FLAG_RTR;
     }
+    twai_ll_frame_buffer_t frame;
+    twai_ll_format_frame_buffer(controller->txId, controller->txLength, &(controller->txData), flags, &frame);
+    twai_ll_set_tx_buffer(&TWAI, &frame);
+
 
     if (controller->loopback) {
         // self reception request
-        TWAI.command_reg.val &= ~0x1f;    //modifyRegister(REG_CMR, 0x1f, 0x10);
-        TWAI.command_reg.srr = 1;         //
+        twai_ll_set_cmd_self_rx_request(&TWAI);
     } else {
         // transmit request
-        TWAI.command_reg.val &= ~0x1f;    //modifyRegister(REG_CMR, 0x1f, 0x01);
-        TWAI.command_reg.tr = 1;          //
+        twai_ll_set_cmd_tx(&TWAI);
     }
 
     // wait for TX complete
-    while(TWAI.status_reg.tcs != 1) {   //while ((readRegister(REG_SR) & 0x08) != 0x08) {
-        if (TWAI.error_code_capture_reg.val == 0xd9) {  //if (readRegister(REG_ECC) == 0xd9) {
+    while(TWAI.status_reg.tcs != 1) {
+        if (TWAI.error_code_capture_reg.val == 0xd9) {
             // error, abort
-            TWAI.command_reg.val &= ~0x1f;    //modifyRegister(REG_CMR, 0x1f, 0x02);
-            TWAI.command_reg.at = 1;          //
+            twai_ll_set_cmd_abort_tx(&TWAI);
             return 0;
         }
         yield();
@@ -360,86 +304,39 @@ STATIC void setPins(CanController *controller, int rx, int tx) {
 }
 
 STATIC int parsePacket(CanController *controller) {
-    if (TWAI.status_reg.rbs != 1) { //if ((readRegister(REG_SR) & 0x01) != 0x01) {
+    if (TWAI.status_reg.rbs != 1) {
         // no packet
         return 0;
     }
 
-    controller->rxExtended = (TWAI.tx_rx_buffer[0].val & 0x80) ? true : false;   //(readRegister(REG_SFF) & 0x80) ? true : false;
-    controller->rxRtr = (TWAI.tx_rx_buffer[0].val & 0x40) ? true : false;   //(readRegister(REG_SFF) & 0x40) ? true : false;
-    controller->rxDlc = TWAI.tx_rx_buffer[0].val & 0x0f;   //(readRegister(REG_SFF) & 0x0f);
-    controller->rxIndex = 0;
-
-    int dataReg;
-    if (controller->rxExtended) {
-        controller->rxId = (TWAI.tx_rx_buffer[1].val << 21) |   //(readRegister(REG_EFF + 1) << 21) |
-                           (TWAI.tx_rx_buffer[2].val << 13) |   //(readRegister(REG_EFF + 2) << 13) |
-                           (TWAI.tx_rx_buffer[3].val << 5) |    //(readRegister(REG_EFF + 3) << 5) |
-                           (TWAI.tx_rx_buffer[4].val << 3);     //(readRegister(REG_EFF + 4) >> 3);
-
-        dataReg = 5;    //dataReg = REG_EFF + 5;
-    } else {
-        controller->rxId = (TWAI.tx_rx_buffer[1].val << 3) | ((TWAI.tx_rx_buffer[2].val >> 5) & 0x07);  //(readRegister(REG_SFF + 1) << 3) | ((readRegister(REG_SFF + 2) >> 5) & 0x07);
-
-        dataReg = 3;    //dataReg = REG_SFF + 3;
-    }
-
-    if (controller->rxRtr) {
+    twai_ll_frame_buffer_t frame;
+    twai_ll_get_rx_buffer(&TWAI, &frame);
+    uint8_t flags;
+    twai_ll_prase_frame_buffer(&TWAI, &(controller->rxId), &(controller->rxDlc, &(controller->rxData, &flags)));
+    if (flags & TWAI_MSG_FLAG_RTR) {
+        controller->rxRtr = true;
         controller->rxLength = 0;
     } else {
+        controller->rxRtr = false;
         controller->rxLength = controller->rxDlc;
-
-        for (int i = 0; i < controller->rxLength; i++) {
-            controller->rxData[i] = TWAI.tx_rx_buffer[dataReg + i].val;     //readRegister(dataReg + i);
-        }
     }
-
-    // release RX buffer
-    TWAI.command_reg.val &= ~0x04;    //modifyRegister(REG_CMR, 0x04, 0x04);
-    TWAI.command_reg.rrb = 1;         //
+    if (flags & TWAI_MSG_FLAG_EXTD) {
+        controller->rxExtended = true;
+    } else {
+        controller->rxExtended = false;
+    }
+    twai_ll_set_cmd_release_rx_buffer(&TWAI);
 
     return controller->rxDlc;
 }
 
 STATIC int filter(CanController *controller, int id, int mask) {
-    id &= 0x7ff;
-    mask = ~(mask & 0x7ff);
-
-    twai_ll_enter_reset_mode(&TWAI);
-
-    TWAI.acceptance_filter.acr[0].val = id >> 3;    //writeRegister(REG_ACRn(0), id >> 3);
-    TWAI.acceptance_filter.acr[1].val = id << 5;    //writeRegister(REG_ACRn(1), id << 5);
-    TWAI.acceptance_filter.acr[2].val = 0x00;   //writeRegister(REG_ACRn(2), 0x00);
-    TWAI.acceptance_filter.acr[3].val = 0x00;   //writeRegister(REG_ACRn(3), 0x00);
-
-    TWAI.acceptance_filter.amr[0].val = mask >> 3;  //writeRegister(REG_AMRn(0), mask >> 3);
-    TWAI.acceptance_filter.amr[1].val = (mask << 5) | 0x1f; //writeRegister(REG_AMRn(1), (mask << 5) | 0x1f);
-    TWAI.acceptance_filter.amr[2].val = 0xff;   //writeRegister(REG_AMRn(2), 0xff);
-    TWAI.acceptance_filter.amr[3].val = 0xff;   //writeRegister(REG_AMRn(3), 0xff);
-
-    twai_ll_set_mode(&TWAI, TWAI_MODE_NORMAL);
-
+    twai_ll_set_acc_filter(&TWAI, id & 0x7ff, ~(mask & 0x7ff));
     return 1;
 }
 
 STATIC int filterExtended(CanController *controller, long id, long mask) {
-    id &= 0x1FFFFFFF;
-    mask &= ~(mask & 0x1FFFFFFF);
-
-    twai_ll_enter_reset_mode(&TWAI);
-
-    TWAI.acceptance_filter.acr[0].val = id >> 21;   //writeRegister(REG_ACRn(0), id >> 21);
-    TWAI.acceptance_filter.acr[1].val = id >> 13;   //writeRegister(REG_ACRn(1), id >> 13);
-    TWAI.acceptance_filter.acr[2].val = id >> 5;    //writeRegister(REG_ACRn(2), id >> 5);
-    TWAI.acceptance_filter.acr[3].val = id << 5;    //writeRegister(REG_ACRn(3), id << 5);
-
-    TWAI.acceptance_filter.amr[0].val = mask >> 21; //writeRegister(REG_AMRn(0), mask >> 21);
-    TWAI.acceptance_filter.amr[1].val = mask >> 13; //writeRegister(REG_AMRn(1), mask >> 13);
-    TWAI.acceptance_filter.amr[2].val = mask >> 5;  //writeRegister(REG_AMRn(2), mask >> 5);
-    TWAI.acceptance_filter.amr[3].val = (mask << 5) | 0x1f; //writeRegister(REG_AMRn(3), (mask << 5) | 0x1f);
-
-    twai_ll_set_mode(&TWAI, TWAI_MODE_NORMAL);
-
+    twai_ll_set_acc_filter(&TWAI, id & 0x1FFFFFFF, ~(mask & 0x1FFFFFFF));
     return 1;
 }
 
