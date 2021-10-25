@@ -123,7 +123,7 @@ STATIC int begin(CanController *controller, int baudRate) {
     twai_ll_set_bus_timing(&TWAI, brp, sjw, tseg1, tseg2, triple_sampling);
 
     // enable all interrupts
-    twai_ll_set_enabled_intrs(&TWAI, 0xFF)
+    twai_ll_set_enabled_intrs(&TWAI, 0xFF);
 
     // set filter to allow anything
     twai_ll_set_acc_filter(&TWAI, 0x00, 0xFF, true);
@@ -312,7 +312,7 @@ STATIC int parsePacket(CanController *controller) {
     twai_ll_frame_buffer_t frame;
     twai_ll_get_rx_buffer(&TWAI, &frame);
     uint8_t flags;
-    twai_ll_prase_frame_buffer(&TWAI, &(controller->rxId), &(controller->rxDlc, &(controller->rxData, &flags)));
+    twai_ll_prase_frame_buffer(&TWAI, &(controller->rxId), &(controller->rxDlc), &(controller->rxData), &flags);
     if (flags & TWAI_MSG_FLAG_RTR) {
         controller->rxRtr = true;
         controller->rxLength = 0;
@@ -331,12 +331,12 @@ STATIC int parsePacket(CanController *controller) {
 }
 
 STATIC int filter(CanController *controller, int id, int mask) {
-    twai_ll_set_acc_filter(&TWAI, id & 0x7ff, ~(mask & 0x7ff));
+    twai_ll_set_acc_filter(&TWAI, id & 0x7ff, ~(mask & 0x7ff), true);
     return 1;
 }
 
 STATIC int filterExtended(CanController *controller, long id, long mask) {
-    twai_ll_set_acc_filter(&TWAI, id & 0x1FFFFFFF, ~(mask & 0x1FFFFFFF));
+    twai_ll_set_acc_filter(&TWAI, id & 0x1FFFFFFF, ~(mask & 0x1FFFFFFF), true);
     return 1;
 }
 
@@ -379,9 +379,6 @@ STATIC void setOnReceive(CanController *controller, void(*callback)(int)) {
         esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, onInterrupt, controller, controller->intrHandle);
     }
 }
-
-
-
 
 STATIC mp_obj_t _begin(mp_obj_t baudrate_obj) {
     long baudrate = mp_obj_get_int(baudrate_obj);
