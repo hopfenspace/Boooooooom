@@ -7,24 +7,25 @@
 #include "driver/gpio.h"
 
 #include "py/runtime.h"
+#include "py/objstr.h"
 
 #define DEFAULT_CAN_RX_PIN GPIO_NUM_4
 #define DEFAULT_CAN_TX_PIN GPIO_NUM_5
 
 #define BAUDRATE_1000E3 1000
-#define BAUDRATE_500E3 500
-#define BAUDRATE_250E3 250
-#define BAUDRATE_200E3 200
-#define BAUDRATE_125E3 125
-#define BAUDRATE_100E3 100
-#define BAUDRATE_80E3 80
-#define BAUDRATE_50E3 50
+#define BAUDRATE_500E3  500
+#define BAUDRATE_250E3  250
+#define BAUDRATE_200E3  200
+#define BAUDRATE_125E3  125
+#define BAUDRATE_100E3  100
+#define BAUDRATE_80E3    80
+#define BAUDRATE_50E3    50
 
 typedef struct CanControllerStruct {
     void (*onReceive)(int);
 
     bool packetBegun;
-    long  txId;
+    long txId;
     int  txExtended;
     bool txRtr;
     int  txDlc;
@@ -32,7 +33,7 @@ typedef struct CanControllerStruct {
     int  txPin;
     uint8_t txData[8];
 
-    long  rxId;
+    long rxId;
     bool rxExtended;
     int  rxRtr;
     int  rxDlc;
@@ -282,7 +283,7 @@ STATIC int available(CanController *controller) {
     return (controller->rxLength - controller->rxIndex);
 }
 
-STATIC int read(CanController *controller) {
+STATIC uint8_t read(CanController *controller) {
     if (!available(controller)) {
         return -1;
     }
@@ -418,7 +419,11 @@ STATIC mp_obj_t _endPacket() {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(endPacket_obj, _endPacket);
 
 STATIC mp_obj_t _write(mp_obj_t byte_obj) {
-    uint8_t byte = mp_obj_get_int(byte_obj);
+    GET_STR_DATA_LEN(byte_obj, string, length)
+    if (length == 0) {
+        mp_raise_ValueError("got empty string");
+    }
+    char byte = string[0];
     size_t written = write(&singleton, byte);
     return mp_obj_new_int(written);
 }
@@ -439,8 +444,8 @@ STATIC mp_obj_t _parsePacket() {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(parsePacket_obj, _parsePacket);
 
 STATIC mp_obj_t _read() {
-    int byte = read(&singleton);
-    return mp_obj_new_int(byte);
+    char byte = read(&singleton);
+    return mp_obj_new_str(&byte, 1);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(read_obj, _read);
 
