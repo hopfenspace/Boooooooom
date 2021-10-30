@@ -103,17 +103,20 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(transmit_obj, 4, transmit);
 STATIC mp_obj_t receive() {
     twai_message_t msg;
     ESP_ERR_RAISE_RETURN(twai_receive(&msg, pdMS_TO_TICKS(10)));
-    mp_obj_t items[5];
+    mp_obj_t items[4];
     items[0] = mp_obj_new_int(msg.identifier);
     items[1] = mp_obj_new_bool(msg.extd);
     items[2] = mp_obj_new_bool(msg.rtr);
-    items[3] = mp_obj_new_int(msg.data_length_code);
-    char data[8];
-    for (int i = 0; i < msg.data_length_code; i++) {
-        data[i] = (char) msg.data[i];
+    if (msg.rtr) {
+	    items[3] = mp_obj_new_int(msg.data_length_code);
+    } else {
+	    char data[8];
+	    for (int i = 0; i < msg.data_length_code; i++) {
+		data[i] = (char) msg.data[i];
+	    }
+	    items[3] = mp_obj_new_str(data, msg.data_length_code);
     }
-    items[4] = mp_obj_new_str(data, msg.data_length_code);
-    return mp_obj_new_tuple(5, items);
+    return mp_obj_new_tuple(4, items);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(receive_obj, receive);
 
