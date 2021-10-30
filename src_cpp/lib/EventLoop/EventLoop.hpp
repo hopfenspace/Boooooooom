@@ -2,7 +2,6 @@
 #define EVENT_LOOP_HPP_
 
 #include <functional>
-#include <queue>
 
 class Job {
     public:
