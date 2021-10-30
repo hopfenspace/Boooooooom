@@ -1,10 +1,7 @@
 #include <string.h>
 
-#include "esp_intr_alloc.h"
-#include "soc/dport_reg.h"
-#include "soc/twai_struct.h"
-#include "hal/twai_ll.h"
 #include "driver/gpio.h"
+#include "hal/twai_hal.h"
 #include "driver/twai.h"
 
 #include "py/runtime.h"
@@ -52,6 +49,8 @@ STATIC void raise_esp_err(esp_err_t error) {
 }
 #define ESP_ERR_RAISE_RETURN(error) {esp_err_t temp = error; if (temp != ESP_OK) {raise_esp_err(temp); return mp_const_none;}}
 
+STATIC void interupt_handler(void *arg);
+
 #define BAUDRATE_CASE(in, out) case in: {twai_timing_config_t temp = out(); timing = temp; break;}
 STATIC mp_obj_t start(mp_obj_t baudrate_obj) {
     twai_general_config_t general = TWAI_GENERAL_CONFIG_DEFAULT(DEFAULT_CAN_TX_PIN, DEFAULT_CAN_RX_PIN, TWAI_MODE_NORMAL);
@@ -68,6 +67,7 @@ STATIC mp_obj_t start(mp_obj_t baudrate_obj) {
         BAUDRATE_CASE(BAUDRATE_25E3, TWAI_TIMING_CONFIG_25KBITS)
         default: mp_raise_ValueError("invalid baudrate"); break;
     }
+    set_handler_extension(interupt_handler);
     ESP_ERR_RAISE_RETURN(twai_driver_install(&general, &timing, &filter));
     ESP_ERR_RAISE_RETURN(twai_start());
     return mp_const_none;
@@ -117,6 +117,19 @@ STATIC mp_obj_t receive() {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(receive_obj, receive);
 
+STATIC mp_obj_t callback = NULL;
+STATIC void interupt_handler(void *arg) {
+    uint32_t event = *(uint32_t*)arg;
+    if ((callback != NULL) && (event & TWAI_HAL_EVENT_RX_BUFF_FRAME)) {
+        mp_sched_schedule(callback, mp_const_none);
+    }
+}
+STATIC mp_obj_t onReceive(mp_obj_t callback_obj) {
+    callback = callback_obj;
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(onReceive_obj, onReceive);
+
 // Define all properties of the module.
 // Table entries are key/value pairs of the attribute name (a string)
 // and the MicroPython object reference.
@@ -128,6 +141,7 @@ STATIC const mp_rom_map_elem_t can_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_stop), MP_ROM_PTR(&stop_obj) },
     { MP_ROM_QSTR(MP_QSTR_transmit), MP_ROM_PTR(&transmit_obj) },
     { MP_ROM_QSTR(MP_QSTR_receive), MP_ROM_PTR(&receive_obj) },
+    { MP_ROM_QSTR(MP_QSTR_on_receive), MP_ROM_PTR(&onReceive_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(can_module_globals, can_module_globals_table);
 
