@@ -1,0 +1,197 @@
+EESchema Schematic File Version 4
+EELAYER 30 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 4 5
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Interface_CAN_LIN:SN65HVD230 U?
+U 1 1 6186CED4
+P 3450 3100
+AR Path="/6186CED4" Ref="U?"  Part="1" 
+AR Path="/618648F7/6186CED4" Ref="U9"  Part="1" 
+F 0 "U9" H 3850 2900 50  0000 C CNN
+F 1 "SN65HVD230" H 3750 2750 50  0000 C CNN
+F 2 "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm" H 3450 2600 50  0001 C CNN
+F 3 "http://www.ti.com/lit/ds/symlink/sn65hvd230.pdf" H 3350 3500 50  0001 C CNN
+	1    3450 3100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:C C?
+U 1 1 6186CEDC
+P 3600 2800
+AR Path="/6186CEDC" Ref="C?"  Part="1" 
+AR Path="/618648F7/6186CEDC" Ref="C5"  Part="1" 
+F 0 "C5" V 3348 2800 50  0000 C CNN
+F 1 "100n" V 3439 2800 50  0000 C CNN
+F 2 "Capacitor_THT:C_Radial_D6.3mm_H11.0mm_P2.50mm" H 3638 2650 50  0001 C CNN
+F 3 "~" H 3600 2800 50  0001 C CNN
+	1    3600 2800
+	0    1    1    0   
+$EndComp
+$Comp
+L power:+3.3V #PWR?
+U 1 1 6186CEE8
+P 3450 2800
+AR Path="/6186CEE8" Ref="#PWR?"  Part="1" 
+AR Path="/618648F7/6186CEE8" Ref="#PWR045"  Part="1" 
+F 0 "#PWR045" H 3450 2650 50  0001 C CNN
+F 1 "+3.3V" H 3400 2950 50  0000 C CNN
+F 2 "" H 3450 2800 50  0001 C CNN
+F 3 "" H 3450 2800 50  0001 C CNN
+	1    3450 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 6186CEEF
+P 3050 3300
+AR Path="/6186CEEF" Ref="#PWR?"  Part="1" 
+AR Path="/618648F7/6186CEEF" Ref="#PWR044"  Part="1" 
+F 0 "#PWR044" H 3050 3050 50  0001 C CNN
+F 1 "GND" H 3055 3127 50  0000 C CNN
+F 2 "" H 3050 3300 50  0001 C CNN
+F 3 "" H 3050 3300 50  0001 C CNN
+	1    3050 3300
+	1    0    0    -1  
+$EndComp
+$Comp
+L Power_Protection:NUP2105L D?
+U 1 1 6186CEF5
+P 4800 3150
+AR Path="/6186CEF5" Ref="D?"  Part="1" 
+AR Path="/618648F7/6186CEF5" Ref="D5"  Part="1" 
+F 0 "D5" V 5142 3150 50  0000 C CNN
+F 1 "NUP2105L" V 5051 3150 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 5025 3100 50  0001 L CNN
+F 3 "http://www.onsemi.com/pub_link/Collateral/NUP2105L-D.PDF" H 4925 3275 50  0001 C CNN
+	1    4800 3150
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	3850 3200 3850 3250
+Wire Wire Line
+	3850 3250 4300 3250
+Wire Wire Line
+	4600 3050 4300 3050
+Wire Wire Line
+	3850 3050 3850 3100
+$Comp
+L power:GND #PWR?
+U 1 1 6186CEFF
+P 5000 3150
+AR Path="/6186CEFF" Ref="#PWR?"  Part="1" 
+AR Path="/618648F7/6186CEFF" Ref="#PWR050"  Part="1" 
+F 0 "#PWR050" H 5000 2900 50  0001 C CNN
+F 1 "GND" V 5005 3022 50  0000 R CNN
+F 2 "" H 5000 3150 50  0001 C CNN
+F 3 "" H 5000 3150 50  0001 C CNN
+	1    5000 3150
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Device:C C?
+U 1 1 6186CF05
+P 4300 2900
+AR Path="/6186CF05" Ref="C?"  Part="1" 
+AR Path="/618648F7/6186CF05" Ref="C6"  Part="1" 
+F 0 "C6" H 4185 2854 50  0000 R CNN
+F 1 "47pF" H 4185 2945 50  0000 R CNN
+F 2 "Capacitor_THT:C_Radial_D6.3mm_H11.0mm_P2.50mm" H 4338 2750 50  0001 C CNN
+F 3 "~" H 4300 2900 50  0001 C CNN
+	1    4300 2900
+	-1   0    0    1   
+$EndComp
+Connection ~ 4300 3050
+Wire Wire Line
+	4300 3050 3850 3050
+$Comp
+L power:GND #PWR?
+U 1 1 6186CF0D
+P 4300 2750
+AR Path="/6186CF0D" Ref="#PWR?"  Part="1" 
+AR Path="/618648F7/6186CF0D" Ref="#PWR048"  Part="1" 
+F 0 "#PWR048" H 4300 2500 50  0001 C CNN
+F 1 "GND" H 4305 2577 50  0000 C CNN
+F 2 "" H 4300 2750 50  0001 C CNN
+F 3 "" H 4300 2750 50  0001 C CNN
+	1    4300 2750
+	-1   0    0    1   
+$EndComp
+$Comp
+L Device:C C?
+U 1 1 6186CF13
+P 4300 3400
+AR Path="/6186CF13" Ref="C?"  Part="1" 
+AR Path="/618648F7/6186CF13" Ref="C7"  Part="1" 
+F 0 "C7" H 4185 3354 50  0000 R CNN
+F 1 "47pF" H 4185 3445 50  0000 R CNN
+F 2 "Capacitor_THT:C_Radial_D6.3mm_H11.0mm_P2.50mm" H 4338 3250 50  0001 C CNN
+F 3 "~" H 4300 3400 50  0001 C CNN
+	1    4300 3400
+	-1   0    0    1   
+$EndComp
+Connection ~ 4300 3250
+Wire Wire Line
+	4300 3250 4600 3250
+$Comp
+L power:GND #PWR?
+U 1 1 6186CF1B
+P 4300 3550
+AR Path="/6186CF1B" Ref="#PWR?"  Part="1" 
+AR Path="/618648F7/6186CF1B" Ref="#PWR049"  Part="1" 
+F 0 "#PWR049" H 4300 3300 50  0001 C CNN
+F 1 "GND" H 4305 3377 50  0000 C CNN
+F 2 "" H 4300 3550 50  0001 C CNN
+F 3 "" H 4300 3550 50  0001 C CNN
+	1    4300 3550
+	1    0    0    -1  
+$EndComp
+Text Notes 4200 2550 2    50   ~ 0
+CAN tranciever\n\n
+NoConn ~ 3050 3200
+Text HLabel 3050 3100 0    50   Input ~ 0
+CRX
+Text HLabel 3050 3000 0    50   Output ~ 0
+CTX
+Text HLabel 4100 3050 1    50   BiDi ~ 0
+CAN_H
+Text HLabel 4100 3250 3    50   BiDi ~ 0
+CAN_L
+$Comp
+L power:GND #PWR?
+U 1 1 6186CEE2
+P 3750 2800
+AR Path="/6186CEE2" Ref="#PWR?"  Part="1" 
+AR Path="/618648F7/6186CEE2" Ref="#PWR047"  Part="1" 
+F 0 "#PWR047" H 3750 2550 50  0001 C CNN
+F 1 "GND" V 3755 2672 50  0000 R CNN
+F 2 "" H 3750 2800 50  0001 C CNN
+F 3 "" H 3750 2800 50  0001 C CNN
+	1    3750 2800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 61923608
+P 3450 3500
+AR Path="/61923608" Ref="#PWR?"  Part="1" 
+AR Path="/618648F7/61923608" Ref="#PWR046"  Part="1" 
+F 0 "#PWR046" H 3450 3250 50  0001 C CNN
+F 1 "GND" H 3350 3500 50  0000 C CNN
+F 2 "" H 3450 3500 50  0001 C CNN
+F 3 "" H 3450 3500 50  0001 C CNN
+	1    3450 3500
+	1    0    0    -1  
+$EndComp
+$EndSCHEMATC
