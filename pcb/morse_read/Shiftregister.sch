@@ -262,12 +262,12 @@ SER
 $Comp
 L Display_Character:CC56-12SURKWA U6
 U 1 1 618DF4E5
-P 6700 1400
-F 0 "U6" H 6700 2067 50  0000 C CNN
-F 1 "CC56-12SURKWA" H 6700 1976 50  0000 C CNN
-F 2 "Display_7Segment:CA56-12SURKWA" H 6700 800 50  0001 C CNN
-F 3 "http://www.kingbright.com/attachments/file/psearch/000/00/00/CC56-12SURKWA(Ver.7A).pdf" H 6270 1430 50  0001 C CNN
-	1    6700 1400
+P 9000 1350
+F 0 "U6" H 9000 2017 50  0000 C CNN
+F 1 "CC56-12SURKWA" H 9000 1926 50  0000 C CNN
+F 2 "Display_7Segment:CA56-12SURKWA" H 9000 750 50  0001 C CNN
+F 3 "http://www.kingbright.com/attachments/file/psearch/000/00/00/CC56-12SURKWA(Ver.7A).pdf" H 8570 1380 50  0001 C CNN
+	1    9000 1350
 	1    0    0    -1  
 $EndComp
 Text Label 2450 3500 0    47   ~ 0
@@ -578,4 +578,32 @@ Wire Wire Line
 	5425 925  5600 925 
 Wire Wire Line
 	5600 925  5600 1100
+$Comp
+L Connector:Conn_01x04_Female J?
+U 1 1 6182D354
+P 5800 1200
+AR Path="/6182D354" Ref="J?"  Part="1" 
+AR Path="/618C9959/6182D354" Ref="J9"  Part="1" 
+F 0 "J9" H 5828 1176 50  0000 L CNN
+F 1 "Conn_01x04_Female" H 5828 1085 50  0000 L CNN
+F 2 "Connector_Molex:Molex_KK-254_AE-6410-04A_1x04_P2.54mm_Vertical" H 5800 1200 50  0001 C CNN
+F 3 "~" H 5800 1200 50  0001 C CNN
+	1    5800 1200
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Conn_01x04_Female J?
+U 1 1 61830A9D
+P 5800 1600
+AR Path="/61830A9D" Ref="J?"  Part="1" 
+AR Path="/618C9959/61830A9D" Ref="J10"  Part="1" 
+F 0 "J10" H 5828 1576 50  0000 L CNN
+F 1 "Conn_01x04_Female" H 5828 1485 50  0000 L CNN
+F 2 "Connector_Molex:Molex_KK-254_AE-6410-04A_1x04_P2.54mm_Vertical" H 5800 1600 50  0001 C CNN
+F 3 "~" H 5800 1600 50  0001 C CNN
+	1    5800 1600
+	1    0    0    -1  
+$EndComp
+Text Notes 5950 1500 0    50   ~ 0
+verbinder für front panel\n
 $EndSCHEMATC
