@@ -259,17 +259,6 @@ Wire Wire Line
 	3500 4400 2450 4400
 Text HLabel 1650 3500 0    47   Input ~ 0
 SER
-$Comp
-L Display_Character:CC56-12SURKWA U6
-U 1 1 618DF4E5
-P 9000 1350
-F 0 "U6" H 9000 2017 50  0000 C CNN
-F 1 "CC56-12SURKWA" H 9000 1926 50  0000 C CNN
-F 2 "Display_7Segment:CA56-12SURKWA" H 9000 750 50  0001 C CNN
-F 3 "http://www.kingbright.com/attachments/file/psearch/000/00/00/CC56-12SURKWA(Ver.7A).pdf" H 8570 1380 50  0001 C CNN
-	1    9000 1350
-	1    0    0    -1  
-$EndComp
 Text Label 2450 3500 0    47   ~ 0
 QA
 Text Label 2450 3600 0    47   ~ 0
