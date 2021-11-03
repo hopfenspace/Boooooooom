@@ -23,8 +23,8 @@ void BMP::setAddress(uint8_t addr) {
     address = addr;
 }
 
-long BMP::constructPacketId(uint8_t dst, MSG_TYPE msgType, bool isSliced = false) {
-    return (((address << 4) + dst << 8) + msgType << 1) + (int)!isSliced << 12;
+long BMP::constructPacketId(uint8_t dst, MSG_TYPE msgType, bool isSliced) {
+    return ((((((address << 4) + dst) << 8) + msgType) << 1) + (int)!isSliced) << 12;
 }
 
 void BMP::reqRESET(uint8_t dst) {
@@ -90,7 +90,19 @@ void BMP::reqMODULE_INFO(uint8_t dst) {
 }
 
 void BMP::sendMODULE_INFO(uint8_t dst, std::vector<uint8_t> data) {
-    // TODO
+    for(int i = 0; i < data.size(); i++) {
+        if(i%8 == 0) {
+            if(data.size() - 1 - i < 8) {
+                CAN.beginExtendedPacket(BMP::constructPacketId(dst, MODULE_INFO));
+            } else {
+                CAN.beginExtendedPacket(BMP::constructPacketId(dst, MODULE_INFO, true));
+            }
+        }
+        CAN.write(data[i]);
+        if(i%8 == 7 || i == data.size() - 1) {
+            CAN.endPacket();
+        }
+    }
 }
 
 void BMP::reqREGISTER() {
