@@ -257,7 +257,7 @@ Flash TTL-Header
 NoConn ~ 8750 3200
 NoConn ~ 8350 3200
 $Sheet
-S 8250 6200 750  150 
+S 6150 6250 750  150 
 U 618B7139
 F0 "Spannungsversorgung" 24
 F1 "Spannungsversorgung.sch" 24
@@ -559,4 +559,52 @@ F5 "Left_Button" I L 7500 6400 50
 F6 "Solved_LED" I R 8100 6250 50 
 F7 "Strike_LED" I R 8100 6200 50 
 $EndSheet
+Text Label 8400 3900 2    50   ~ 0
+Right_Button
+Wire Wire Line
+	7950 3700 8400 3700
+Wire Wire Line
+	7950 3800 8400 3800
+Wire Wire Line
+	7950 3900 8400 3900
+Text Label 8400 3700 2    50   ~ 0
+Submit_Button
+Text Label 8400 3800 2    50   ~ 0
+Left_Button
+Wire Wire Line
+	7950 4400 8400 4400
+Wire Wire Line
+	7950 4500 8400 4500
+Wire Wire Line
+	7950 4600 8400 4600
+Text Label 8400 4500 2    50   ~ 0
+Strike_LED
+Text Label 8400 4400 2    50   ~ 0
+Solved_LED
+Text Label 8400 4600 2    50   ~ 0
+Morse_LED
+Wire Wire Line
+	8100 6200 8450 6200
+Wire Wire Line
+	8100 6250 8450 6250
+Wire Wire Line
+	8100 6300 8450 6300
+Text Label 7200 6450 0    24   ~ 0
+Submit_Button
+Text Label 7250 6400 0    24   ~ 0
+Left_Button
+Text Label 7250 6350 0    24   ~ 0
+Right_Button
+Wire Wire Line
+	7250 6350 7500 6350
+Wire Wire Line
+	7500 6400 7250 6400
+Wire Wire Line
+	7200 6450 7500 6450
+Text Label 8450 6200 2    24   ~ 0
+Strike_LED
+Text Label 8450 6250 2    24   ~ 0
+Solved_LED
+Text Label 8450 6300 2    24   ~ 0
+Morse_LED
 $EndSCHEMATC

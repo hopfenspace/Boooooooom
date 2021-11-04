@@ -55,7 +55,7 @@ class BMP {
         static void reqIS_SOLVED(uint8_t dst);
         static void sendIS_SOLVED(uint8_t dst, bool isSolved);
     private:
-        static long constructPacketId(uint8_t dst, MSG_TYPE msgType, bool isSliced=false);
+        static long constructPacketId(uint8_t dst, MSG_TYPE msgType, bool isSliced = false);
         static void processInterrupt(int packetSize);
         static bool validatePacket(uint8_t msgType, bool isRTR);
 };
