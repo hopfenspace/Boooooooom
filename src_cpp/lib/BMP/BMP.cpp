@@ -1,5 +1,6 @@
 #include <map>
 #include <set>
+#include <iterator>
 
 #include <BMP.hpp>
 #include <EventLoop.hpp>
@@ -232,25 +233,24 @@ void BMP::reqLABELS() {
 }
 
 void BMP::sendLABELS(uint8_t dst, std::map<std::string, bool> labels) {
-    int i = 0;
-    for(auto pair : labels) {
+    std::map<std::string, bool>::iterator it = labels.begin();
+
+    for(int i = 0; i < labels.size(); i++) {
         if(i%2 == 0) {
-            if(labels.size() > 2) {
-                CAN.beginExtendedPacket(BMP::constructPacketId(dst, LABELS, true));
-            } else {
+            if(labels.size() - 1 - i < 2) {
                 CAN.beginExtendedPacket(BMP::constructPacketId(dst, LABELS));
+            } else {
+                CAN.beginExtendedPacket(BMP::constructPacketId(dst, LABELS, true));
             }
         }
-        CAN.write(pair.second);
-        for(int j = 0; j < pair.first.length(); j++) {
-            CAN.write((char)pair.first[j]);
+        CAN.write(it->second);
+        for(auto j : it->first) {
+            CAN.write((char)j);
         }
-
         if(i%2 == 1 || i == labels.size() - 1) {
             CAN.endPacket();
         }
-
-        i++;
+        it++;
     }
 }
 
