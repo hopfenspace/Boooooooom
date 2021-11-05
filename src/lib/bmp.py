@@ -141,7 +141,7 @@ class BMP:
     def mark_solved(self):
         self.request(MASTER, MSG_MARK_SOLVED)
 
-    def mark_reactived(self):
+    def mark_reactivated(self):
         self.request(MASTER, MSG_MARK_REACTIVATED)
 
     def change_timer(self, timedelta):

@@ -26,6 +26,11 @@ To flash the esp you need the OS permission:
 
 `sudo adduser <username> dialout`
 
+or for Arch-Linux:
+```
+sudo -a -G uucp <username>
+```
+
 **Finally apply some tweaks to esp-idf's code in order to compile some of our custom modules.
 This directory contains a `tweak_esp-idf.py` script. Execute it with the path to your esp-idf repo as argument.**
 
