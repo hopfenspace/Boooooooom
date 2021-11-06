@@ -30,6 +30,6 @@ class SevenSegment(ShiftRegister7648):
         else:
             dot = 0
         digit = str(digit.lower())
-        self.write_byte(table[digit] << 1 + dot)
+        self.write_int(table[digit] << 1 + dot)
         # starting from left the binary digits represent:
         # a, b, c, d, e, f, g, dot
