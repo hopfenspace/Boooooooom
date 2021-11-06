@@ -5,7 +5,7 @@
 #include <Arduino.h>
 
 #include <EventLoop.hpp>
-#include <BMP.hpp>
+#include <BMP.hpp>  
 
 #define ADDRESS 0
 
@@ -19,7 +19,9 @@ uint8_t strikes = 0;
 std::string serialNo;
 uint8_t difficulty;
 unsigned long startTime;
-unsigned long timer;
+// 1/10s as base unit 
+unsigned long currentTimer;
+float timeFactor = 1.0;
 
 void loop() {
     executeJobs(millis());
@@ -65,6 +67,9 @@ void processREGISTER(int sender, bool isRTR, std::vector<uint8_t> data) {
 
 void processSTRIKE(int sender, bool isRTR, std::vector<uint8_t> data) {
     strikes++;
+    if(strikes < 4) {
+        timeFactor += 0.5;
+    }
     if(maxStrikes == strikes) {
         for(auto address : addresses) {
             BMP::reqEXPLODED(address);
@@ -101,7 +106,7 @@ void processMARK_SOLVED(int sender, bool isRTR, std::vector<uint8_t> data) {
 }
 
 void processCHANGE_TIMER(int sender, bool isRTR, std::vector<uint8_t> data) {
-    uint32_t tmp;
+    uint32_t tmp = 0;
     for(int i = 0; i < data.size(); i++) {
         tmp = (tmp << 8) + data[i];
     }
@@ -119,8 +124,9 @@ void processTIMER(int sender, bool isRTR, std::vector<uint8_t> data) {
     if(!isRTR) {
         return;
     }
-    // TODO Send serialNo
-    Serial.printf("Module %d wants to know the remaining ms\n", sender);
+    uint32_t curr = (unsigned long)(currentTimer/10);
+    BMP::sendTIMER(sender, curr);
+    Serial.printf("Module %d wants to know the timer: %u\n", sender, curr);
 }
 
 void processSERIAL_NO(int sender, bool isRTR, std::vector<uint8_t> data) {
@@ -185,12 +191,32 @@ void processLABELS(int sender, bool isRTR, std::vector<uint8_t> data) {
     Serial.printf("Module %d wants to know the defined labels\n", sender);
 }
 
+std::function<void()> calcTimer();
+std::function<void()> calcTimer() {
+    return [](){
+        currentTimer -= (int)(10 * timeFactor);
+        if(currentTimer <= 0) {
+            currentTimer = 0;
+            for(auto pair : solvedStates) {
+                BMP::reqEXPLODED(pair.first);
+            }
+            return;
+        }
+        addJob(millis()+100, calcTimer());
+    };
+}
+
 void setup() {
     Serial.begin(115200);
     Serial.println("Initialized serial");
 
     srand(esp_random());
     Serial.println("Use CHAOS to generate random numbers");
+
+    difficulty = NORMAL;
+    maxStrikes = 3;
+    // * 100 for 1/100s
+    currentTimer = 300 * 100;
 
     setSerial();
     Serial.printf("Generated serial_no: %s\n", serialNo.c_str());
@@ -200,11 +226,6 @@ void setup() {
     for(auto label : labels) {
         Serial.printf("%s : %d\n", label.first.c_str(), label.second);
     }
-
-    maxStrikes = 3;
-    difficulty = NORMAL;
-    timer = 3000;
-
 
     BMP::setAddress(ADDRESS);
     BMP::setCallback(MSG_TYPE::REGISTER, processREGISTER);
@@ -218,5 +239,10 @@ void setup() {
     BMP::setCallback(MSG_TYPE::MODULE_COUNT, processMODULE_COUNT);
     BMP::setCallback(MSG_TYPE::ACTIVE_MODULE_COUNT, processACTIVE_MODULE_COUNT);
     BMP::setCallback(MSG_TYPE::LABELS, processLABELS);
+    BMP::setCallback(MSG_TYPE::SERIAL_NO, processSERIAL_NO);
+    BMP::setCallback(MSG_TYPE::DIFFICULTY, processDIFFICULTY);
+    BMP::setCallback(MSG_TYPE::MAX_STRIKES, processMAX_STRIKES);
     BMP::begin(1E6);
+
+    addJob(millis(), calcTimer());
 }
