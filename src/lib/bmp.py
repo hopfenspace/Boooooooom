@@ -138,7 +138,7 @@ class BMP:
     def _on_receive(self, _):
         id_, ext, request, data_or_dlc = can.receive()
         sender, recipient, msg_type, eot = _parse_id(id_)
-        print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
+        #print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
         if recipient != self.address:
             return
         if request and msg_type in self.request_handler:
@@ -269,7 +269,7 @@ class AsyncBMP:
     def _on_receive(self, _):
         id_, ext, request, data_or_dlc = can.receive()
         sender, recipient, msg_type, eot = _parse_id(id_)
-        print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
+        #print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
         if recipient != self.address:
             return
         if request and msg_type in self.request_handler:
