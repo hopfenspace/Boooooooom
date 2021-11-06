@@ -3,7 +3,6 @@
 
 #include <functional>
 #include <vector>
-#include <map>
 
 enum MSG_TYPE {
     RESET = 0, INIT = 1, START = 2, DEFUSED = 3, EXPLODED = 4, RTFM = 5, VERSION = 6, MODULE_INFO = 7, 
