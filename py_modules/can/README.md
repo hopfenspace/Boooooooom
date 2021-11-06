@@ -13,6 +13,11 @@
 
 ## Methods
 
+### `set_pins(tx, rx)`
+Specify the pins to use.
+Defaults to 5 and 4.
+This must be called before `start` to take effect.
+
 ### `start(baudrate: int)`
 Start the can module. The baudrate specifies kbit/s and only accepts values from [twai.c's macros](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/twai.html)
 
