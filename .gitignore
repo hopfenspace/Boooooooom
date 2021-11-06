@@ -8,6 +8,11 @@ platformio.ini
 venv/
 __pycache__/
 
+# C++
+src_cpp/modules/**/lib/
+src_cpp/modules/**/test/
+src_cpp/modules/**/include/
+
 # KiCAD
 *.sch-bak
 *.code-workspace
