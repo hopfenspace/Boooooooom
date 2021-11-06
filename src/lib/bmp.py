@@ -39,15 +39,15 @@ def _ascii(data):
 
 
 def _uint8(data):
-    return struct.unpack("B", data)[0]
+    return struct.unpack(">B", data)[0]
 
 
 def _uint32(data):
-    return struct.unpack("I", data)[0]
+    return struct.unpack(">I", data)[0]
 
 
 def _int32(data):
-    return struct.unpack("i", data)[0]
+    return struct.unpack(">i", data)[0]
 
 
 def _labels(data):
@@ -58,7 +58,7 @@ def _labels(data):
 
 
 _converter = {
-    MSG_TIMER: _int32,
+    MSG_TIMER: _uint32,
     MSG_SERIAL_NO: _ascii,
     MSG_STRIKES: _uint8,
     MSG_MAX_STRIKES: _uint8,
@@ -268,9 +268,8 @@ class AsyncBMP:
 
     def _on_receive(self, _):
         id_, ext, request, data_or_dlc = can.receive()
-        print(f"Parsed packet: id={id_}, ext={ext}, request={request}, data_or_dlc={data_or_dlc}")
         sender, recipient, msg_type, eot = _parse_id(id_)
-        print(f"Parsed id: sender={sender}, recipient={recipient}, msg_type={msg_type}, eot={eot}")
+        print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
         if recipient != self.address:
             return
         if request and msg_type in self.request_handler:
