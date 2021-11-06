@@ -34,6 +34,8 @@ class ShiftRegister:
 
 class ShiftRegisterSNx4HC595(ShiftRegister):
 
+    __slots__ = ("_serial", "_storage_clock", "_shift_clock", "_clear")
+
     def __init__(self, *, ser, srclk, rclk, srclr):
         self._serial = Pin(ser, Pin.OUT)
         self._storage_clock = Pin(rclk, Pin.OUT, value=0)
@@ -42,6 +44,7 @@ class ShiftRegisterSNx4HC595(ShiftRegister):
 
     def clear(self):
         self._pulse(self._clear)
+        self.push()
 
     def push(self):
         self._pulse(self._storage_clock)
@@ -61,7 +64,7 @@ class ShiftRegisterSNx4HC595(ShiftRegister):
 
 class ShiftRegister7648(ShiftRegister):
 
-    clock_cycle = 1  # microseconds
+    __slots__ = ("_serial", "_clock", "_clear")
 
     def __init__(self, serial, clock, clear):
         self._serial = Pin(serial, Pin.OUT)
