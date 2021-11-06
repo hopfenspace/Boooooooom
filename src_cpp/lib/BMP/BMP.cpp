@@ -151,7 +151,7 @@ void BMP::reqTIMER() {
 
 void BMP::sendTIMER(uint8_t dst, uint32_t timer) {
     CAN.beginExtendedPacket(BMP::constructPacketId(dst, TIMER));
-    for(int i = 5; i > 0; i--) {
+    for(int i = 3; i >= 0; i--) {
         CAN.write(timer >> i*8);
     }
     CAN.endPacket();
