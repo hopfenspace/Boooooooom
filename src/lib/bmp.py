@@ -36,9 +36,16 @@ def _format_id(sender, recipient, msg_type, eot=1):
     return ((((((sender << 4) + recipient) << 8) + msg_type) << 1) + eot) << 12
 
 
-def _parse_id(self, id_):
-    id_ = bin(id_)[2:]
-    return int(id_[0:4], 2), int(id_[4:8], 2), int(id_[8:16], 2), int(id_[16:17], 2)
+def _parse_id(id_):
+    id_ = id_ >> 12
+    eot = id_ & 1
+    id_ = id_ >> 1
+    msg_type = id_ & 255
+    id_ = id_ >> 8
+    recipient = id_ & 15
+    id_ = id_ >> 4
+    sender = id_ & 15
+    return sender, recipient, msg_type, eot
 
 
 class RequestableData:
@@ -89,7 +96,9 @@ class BMP:
 
     def _on_receive(self, _):
         id_, ext, request, data_or_dlc = can.receive()
+        print(f"Parsed packet: id={id_}, ext={ext}, request={request}, data_or_dlc={data_or_dlc}")
         sender, recipient, msg_type, eot = _parse_id(id_)
+        print(f"Parsed id: sender={sender}, recipient={recipient}, msg_type={msg_type}, eot={eot}")
         if recipient != self.address:
             return
         if request and msg_type in self.request_handler:
@@ -116,7 +125,7 @@ class BMP:
         return callback
 
     def request(self, recipient, msg_type, callback=None):
-        can.transmit(_format_id(recipient, msg_type), True, True, 0)
+        can.transmit(_format_id(self.address, recipient, msg_type), True, True, 0)
         if callback is not None:
             self._callbacks[msg_type] = callback
 
@@ -126,7 +135,7 @@ class BMP:
             packets += 1
         for i in range(packets):
             eot = 1 if i == packets-1 else 0
-            can.transmit(_format_id(recipient, msg_type, eot), True, False, data[i*8:])
+            can.transmit(_format_id(self.address, recipient, msg_type, eot), True, False, data[i*8:])
 
     # Request action from master
     def register(self):
@@ -145,7 +154,7 @@ class BMP:
         self.request(MASTER, MSG_MARK_REACTIVATED)
 
     def change_timer(self, timedelta):
-        self.send(MASTER, MSG_CHANGE_TIMER, timedelta.to_bytes(4, "big", signed=True))
+        self.send(MASTER, MSG_CHANGE_TIMER, timedelta.to_bytes(4, "big"))
     
     def change_serial_no(self):
         self.request(MASTER, MSG_CHANGE_SERIAL_NO)
