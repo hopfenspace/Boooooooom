@@ -157,7 +157,7 @@ class BMP:
 
     def _set_default_callback(self, attr, msg_type):
         conv = _converter.setdefault(msg_type, _ascii)
-        if attr not in RequestableData._slave2slave:
+        if attr not in _RequestableData._slave2slave:
             def callback(_, data):
                 setattr(self.data, attr, conv(data))
         else:
