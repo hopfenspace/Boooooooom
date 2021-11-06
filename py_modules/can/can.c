@@ -7,9 +7,6 @@
 #include "py/runtime.h"
 #include "py/objstr.h"
 
-#define DEFAULT_CAN_RX_PIN GPIO_NUM_4
-#define DEFAULT_CAN_TX_PIN GPIO_NUM_5
-
 #define BAUDRATE_1000E3 1000
 #define BAUDRATE_800E3   800
 #define BAUDRATE_500E3   500
@@ -51,11 +48,13 @@ STATIC void raise_esp_err(esp_err_t error) {
 
 STATIC void interupt_handler(void *arg);
 
+
+twai_general_config_t general = TWAI_GENERAL_CONFIG_DEFAULT(5, 4, TWAI_MODE_NORMAL);
+twai_timing_config_t timing;
+twai_filter_config_t filter = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+
 #define BAUDRATE_CASE(in, out) case in: {twai_timing_config_t temp = out(); timing = temp; break;}
 STATIC mp_obj_t start(mp_obj_t baudrate_obj) {
-    twai_general_config_t general = TWAI_GENERAL_CONFIG_DEFAULT(DEFAULT_CAN_TX_PIN, DEFAULT_CAN_RX_PIN, TWAI_MODE_NORMAL);
-    twai_timing_config_t timing;
-    twai_filter_config_t filter = TWAI_FILTER_CONFIG_ACCEPT_ALL();
     switch (mp_obj_get_int(baudrate_obj)) {
         BAUDRATE_CASE(BAUDRATE_1000E3, TWAI_TIMING_CONFIG_1MBITS)
         BAUDRATE_CASE(BAUDRATE_800E3, TWAI_TIMING_CONFIG_800KBITS)
@@ -80,6 +79,13 @@ STATIC mp_obj_t stop() {
     return mp_const_none;
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(stop_obj, stop);
+
+STATIC mp_obj_t set_pins(mp_obj_t tx, mp_obj_t rx) {
+    general.rx_io = mp_obj_get_int(rx);
+    general.tx_io = mp_obj_get_int(tx);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(set_pins_obj, set_pins);
 
 STATIC mp_obj_t transmit(size_t nargs, const mp_obj_t *args) {//id, ext, rtr, dlc || data
     twai_message_t msg;
@@ -145,6 +151,7 @@ STATIC const mp_rom_map_elem_t can_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_transmit), MP_ROM_PTR(&transmit_obj) },
     { MP_ROM_QSTR(MP_QSTR_receive), MP_ROM_PTR(&receive_obj) },
     { MP_ROM_QSTR(MP_QSTR_on_receive), MP_ROM_PTR(&onReceive_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_pins), MP_ROM_PTR(&set_pins_obj) },
 };
 STATIC MP_DEFINE_CONST_DICT(can_module_globals, can_module_globals_table);
 
