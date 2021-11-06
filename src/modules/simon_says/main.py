@@ -96,3 +96,41 @@ class SimonSays:
 
     def generate_manual(self) -> str:
         pass  # TODO
+
+
+class SimonSaysConsole(SimonSays):
+    """
+    Simon Says game usable in the interactive mode of Python for debugging
+    """
+
+    def __init__(self, difficulty: str):
+        super().__init__(difficulty)
+        self.static_serial = "".join([random.choice(ALPHABET) for _ in range(8)])
+        self.static_strikes = random.randint(0, 2)
+
+    async def get_serial_no(self):
+        return self.static_serial
+
+    async def get_strikes(self):
+        return self.static_strikes
+
+    async def strike(self):
+        print("STRIKE!")
+
+    async def reset(self):
+        pass
+
+    async def next(self):
+        print("NEXT!")
+
+    async def finish(self):
+        print("FINISH!")
+
+    def play_interactively(self):
+        print(f"Strikes: {self.static_strikes}")
+        print(f"Serial no: {self.static_serial}")
+        print(f"Mappings:\n{NL.join(str(mapping) for mapping in self.mappings)}")
+        while not self.finished:
+            print(" - ".join(self.get_current_output()))
+            color = input("> ").upper()
+            uasyncio.run(self.press_button(color))
