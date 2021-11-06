@@ -1,0 +1,14 @@
+# General (IDEs, ..)
+.idea/
+.vscode/
+.pio/
+platformio.ini
+
+# Python
+venv/
+__pycache__/
+
+# KiCAD
+*.sch-bak
+*.code-workspace
+*.lib
