@@ -125,7 +125,7 @@ class BMP:
                 requests[msg_type] = request
 
         if new:
-            self.request(recipient, MSG_TIMER)
+            self.request(recipient, msg_type)
 
         await request.event.wait()
         return request.data
