@@ -17,3 +17,4 @@ src_cpp/modules/**/include/
 *.sch-bak
 *.code-workspace
 *.lib
+fp-info-cache
