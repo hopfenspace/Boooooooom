@@ -151,10 +151,25 @@ class SimonSaysGame(SimonSays):
             yellow: (machine.Pin, machine.Pin)
     ):
         super().__init__(difficulty)
-        self.blue = blue
-        self.green = green
-        self.red = red
-        self.yellow = yellow
+        self.blue = [blue[0], blue[1], "BLUE", 0]
+        self.green = [green[0], green[1], "GREEN", 0]
+        self.red = [red[0], red[1], "RED", 0]
+        self.yellow = [yellow[0], yellow[1], "YELLOW", 0]
+
+        self.blue[0].irq(handler=lambda _: self.handle(self.blue), trigger=machine.Pin.IRQ_RISING)
+        self.green[0].irq(handler=lambda _: self.handle(self.green), trigger=machine.Pin.IRQ_RISING)
+        self.red[0].irq(handler=lambda _: self.handle(self.red), trigger=machine.Pin.IRQ_RISING)
+        self.yellow[0].irq(handler=lambda _: self.handle(self.yellow), trigger=machine.Pin.IRQ_RISING)
+
+    def handle(self, color_def: list):
+        if color_def[0].value():
+            color_def[1].on()
+            if self.last_state == 0:
+                uasyncio.get_event_loop().create_task(self.press_button(color_def[2]))
+            self.last_state = 1
+        else:
+            color_def[1].off()
+            self.last_state = 0
 
     @classmethod
     def create_from_pin_ids(
