@@ -142,24 +142,13 @@ class SimonSaysGame(SimonSays):
     Simon Says game using hardware pins to configure interrupt handlers
     """
 
-    def __init__(
-            self,
-            difficulty: str,
-            blue: (machine.Pin, machine.Pin),
-            green: (machine.Pin, machine.Pin),
-            red: (machine.Pin, machine.Pin),
-            yellow: (machine.Pin, machine.Pin)
-    ):
+    def __init__(self, difficulty: str, button_setup: dict):
         super().__init__(difficulty)
-        self.blue = [blue[0], blue[1], "BLUE", 0]
-        self.green = [green[0], green[1], "GREEN", 0]
-        self.red = [red[0], red[1], "RED", 0]
-        self.yellow = [yellow[0], yellow[1], "YELLOW", 0]
+        self.buttons = button_setup
 
-        self.blue[0].irq(handler=lambda _: self.handle(self.blue), trigger=machine.Pin.IRQ_RISING)
-        self.green[0].irq(handler=lambda _: self.handle(self.green), trigger=machine.Pin.IRQ_RISING)
-        self.red[0].irq(handler=lambda _: self.handle(self.red), trigger=machine.Pin.IRQ_RISING)
-        self.yellow[0].irq(handler=lambda _: self.handle(self.yellow), trigger=machine.Pin.IRQ_RISING)
+        for button in self.buttons:
+            self.buttons[button]["in"].irq(handler=lambda _: self.handle(button), trigger=machine.Pin.IRQ_RISING)
+
 
     def handle(self, color_def: list):
         if color_def[0].value():
@@ -170,6 +159,43 @@ class SimonSaysGame(SimonSays):
         else:
             color_def[1].off()
             self.last_state = 0
+
+    @classmethod
+    def create_from_pin_setup(
+            cls,
+            difficulty: str,
+            blue: (machine.Pin, machine.Pin),
+            green: (machine.Pin, machine.Pin),
+            red: (machine.Pin, machine.Pin),
+            yellow: (machine.Pin, machine.Pin)
+    ):
+        buttons = {
+            "BLUE": {
+                "in": blue[0],
+                "out": blue[1],
+                "color": "BLUE",
+                "state": 0
+            },
+            "GREEN": {
+                "in": green[0],
+                "out": green[1],
+                "color": "GREEN",
+                "state": 0
+            },
+            "RED": {
+                "in": red[0],
+                "out": red[1],
+                "color": "RED",
+                "state": 0
+            },
+            "YELLOW": {
+                "in": yellow[0],
+                "out": yellow[1],
+                "color": "YELLOW",
+                "state": 0
+            }
+        }
+        return SimonSaysGame(difficulty, buttons)
 
     @classmethod
     def create_from_pin_ids(
