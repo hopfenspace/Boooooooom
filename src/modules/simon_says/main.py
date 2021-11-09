@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import time
 import random
 import machine
 import uasyncio
@@ -134,3 +135,42 @@ class SimonSaysConsole(SimonSays):
             print(" - ".join(self.get_current_output()))
             color = input("> ").upper()
             uasyncio.run(self.press_button(color))
+
+
+class SimonSaysGame(SimonSays):
+    """
+    Simon Says game using hardware pins to configure interrupt handlers
+    """
+
+    def __init__(
+            self,
+            difficulty: str,
+            blue: (machine.Pin, machine.Pin),
+            green: (machine.Pin, machine.Pin),
+            red: (machine.Pin, machine.Pin),
+            yellow: (machine.Pin, machine.Pin)
+    ):
+        super().__init__(difficulty)
+        self.blue = blue
+        self.green = green
+        self.red = red
+        self.yellow = yellow
+
+    @classmethod
+    def create_from_pin_ids(
+            cls,
+            difficulty: str,
+            blue_button_pin: int,
+            blue_led_pin: int,
+            green_button_pin: int,
+            green_led_pin: int,
+            red_button_pin: int,
+            red_led_pin: int,
+            yellow_button_pin: int,
+            yellow_led_pin: int
+    ):
+        blue = (machine.Pin(blue_button_pin, machine.Pin.IN), machine.Pin(blue_led_pin, machine.Pin.OUT))
+        green = (machine.Pin(green_button_pin, machine.Pin.IN), machine.Pin(green_led_pin, machine.Pin.OUT))
+        red = (machine.Pin(red_button_pin, machine.Pin.IN), machine.Pin(red_led_pin, machine.Pin.OUT))
+        yellow = (machine.Pin(yellow_button_pin, machine.Pin.IN), machine.Pin(yellow_led_pin, machine.Pin.OUT))
+        return SimonSaysGame(difficulty, blue, green, red, yellow)
