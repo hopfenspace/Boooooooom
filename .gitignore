@@ -12,6 +12,7 @@ __pycache__/
 src_cpp/modules/**/lib/
 src_cpp/modules/**/test/
 src_cpp/modules/**/include/
+src_cpp/modules/**/.gitignore
 
 # KiCAD
 *.sch-bak
