@@ -294,7 +294,7 @@ void BMP::processInterrupt(int packetSize) {
     }
 
     uint32_t header = CAN.packetId();
-    if(((header & 0b0000111100000000000000000000) >> 21) != address) {
+    if(((header & 0b00001111000000000000000000000) >> 21) != address) {
         return;
     }
     
@@ -314,7 +314,7 @@ void BMP::processInterrupt(int packetSize) {
     int sender = (header & 0b11110000000000000000000000000) >> 25;
     if(CAN.packetRtr()) {
         // if NOT EOT; return
-        if(!(header & 0b0000000000000001000000000000) >> 12) {
+        if(!(header & 0b00000000000000001000000000000) >> 12) {
             return;
         }
         addJob(millis(), [msgType, sender](){callbacks.at(msgType)(sender, true, std::vector<uint8_t>());});
