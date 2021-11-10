@@ -146,8 +146,15 @@ class SimonSaysGame(SimonSays):
         super().__init__(list(button_setup.keys()), difficulty)
         self.buttons = button_setup
 
-        for button in self.buttons:
-            self.buttons[button]["in"].irq(handler=lambda _: self.handle(button), trigger=machine.Pin.IRQ_RISING)
+        def handle_b(_): self.handle(self.buttons["BLUE"])
+        def handle_g(_): self.handle(self.buttons["GREEN"])
+        def handle_r(_): self.handle(self.buttons["RED"])
+        def handle_y(_): self.handle(self.buttons["YELLOW"])
+
+        self.buttons["BLUE"]["in"].irq(handler=handle_b, trigger=machine.Pin.IRQ_RISING)
+        self.buttons["GREEN"]["in"].irq(handler=handle_g, trigger=machine.Pin.IRQ_RISING)
+        self.buttons["RED"]["in"].irq(handler=handle_r, trigger=machine.Pin.IRQ_RISING)
+        self.buttons["YELLOW"]["in"].irq(handler=handle_y, trigger=machine.Pin.IRQ_RISING)
 
         self.current_task = uasyncio.get_event_loop().create_task(self.blink())
 
