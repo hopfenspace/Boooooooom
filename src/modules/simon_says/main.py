@@ -165,16 +165,17 @@ class SimonSaysGame(SimonSays):
         self.current_task = uasyncio.get_event_loop().create_task(self.blink())
 
     def handle(self, color: dict):
+        button = self.buttons[color]
         self.current_task.cancel()
-        if color["in"].value():
-            color["out"].on()
-            if color["state"] == 0:
-                uasyncio.get_event_loop().create_task(self.press_button(color["color"]))
+        if button["in"].value():
+            button["out"].on()
+            if button["state"] == 0:
+                uasyncio.get_event_loop().create_task(self.press_button(button["color"]))
                 self.current_task = uasyncio.get_event_loop().create_task(self.restart_blinking())
-            color["state"] = 1
+            button["state"] = 1
         else:
-            color["out"].off()
-            color["state"] = 0
+            button["out"].off()
+            button["state"] = 0
 
     @classmethod
     def create_from_pin_setup(
