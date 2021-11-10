@@ -186,6 +186,26 @@ class SimonSaysGame(SimonSays):
             button["out"].off()
             button["state"] = 0
 
+    def test_hardware(self):
+        print("Checking the LED outputs...")
+        for color in self.buttons:
+            print(f"You should see the {color} LED.")
+            led = self.buttons[color]["out"]
+            led.on()
+            time.sleep(2)
+            led.off()
+            time.sleep(1)
+        print("Now press all the buttons! Starting an active for 30s loop...")
+        start_time = time.ticks_ms()
+        while True:
+            for color in self.buttons:
+                self.buttons[color]["out"].value(self.buttons[color]["in"].value())
+                if self.buttons[color]["in"].value():
+                    print(f"Button {color} is pressed.")
+            if time.ticks_diff(time.ticks_ms(), start_time) > 30 * 10**3:
+                break
+        print("Done.")
+
     @classmethod
     def create_from_pin_setup(
             cls,
