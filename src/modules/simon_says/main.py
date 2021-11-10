@@ -201,7 +201,7 @@ class SimonSaysGame(SimonSays):
             time.sleep(2)
             led.off()
             time.sleep(1)
-        print("Now press all the buttons! Starting an active for 30s loop...")
+        print("Now press all the buttons! Starting an active loop for 30s...")
         start_time = time.ticks_ms()
         while True:
             for color in self.buttons:
