@@ -16,14 +16,6 @@ class SimonSays:
     Simon Says core game without implemented interaction methods
     """
 
-    # Mapping to define the different color names
-    COLORS = {
-        "BLUE": 1,
-        "GREEN": 2,
-        "RED": 3,
-        "YELLOW": 4
-    }
-
     # Mapping from difficulty to number of colors and number of different color mappings
     DIFFICULTIES = {
         "IMMORTAL": (1, 1),
@@ -35,10 +27,11 @@ class SimonSays:
         "PREPARE_2_DIE": (6, 6)
     }
 
-    def __init__(self, difficulty: str):
+    def __init__(self, colors: list, difficulty: str):
+        self._colors = colors
         self._difficulty = difficulty
         self.difficulty = self.DIFFICULTIES[difficulty]
-        self.complete_output = [random.choice(list(self.COLORS)) for _ in range(self.difficulty[0])]
+        self.complete_output = [random.choice(list(self._colors)) for _ in range(self.difficulty[0])]
 
         def _shuffle(lst):
             for i in reversed(range(1, len(lst))):
@@ -48,7 +41,7 @@ class SimonSays:
 
         self.mappings = [
             {
-                k: dict(zip(list(self.COLORS.keys()), _shuffle(list(self.COLORS.keys()))))
+                k: dict(zip(list(self._colors), _shuffle(list(self._colors))))
                 for k in [(0, True), (1, True), (2, True), (0, False), (1, False), (2, False)]
             }
             for _ in range(self.difficulty[1])
@@ -105,7 +98,7 @@ class SimonSaysConsole(SimonSays):
     """
 
     def __init__(self, difficulty: str):
-        super().__init__(difficulty)
+        super().__init__(["BLUE", "GREEN", "RED", "YELLOW"], difficulty)
         self.static_serial = "".join([random.choice(ALPHABET) for _ in range(8)])
         self.static_strikes = random.randint(0, 2)
 
@@ -143,22 +136,22 @@ class SimonSaysGame(SimonSays):
     """
 
     def __init__(self, difficulty: str, button_setup: dict):
-        super().__init__(difficulty)
+        super().__init__(list(button_setup.keys()), difficulty)
         self.buttons = button_setup
 
         for button in self.buttons:
             self.buttons[button]["in"].irq(handler=lambda _: self.handle(button), trigger=machine.Pin.IRQ_RISING)
 
 
-    def handle(self, color_def: list):
-        if color_def[0].value():
-            color_def[1].on()
-            if self.last_state == 0:
-                uasyncio.get_event_loop().create_task(self.press_button(color_def[2]))
-            self.last_state = 1
+    def handle(self, color: dict):
+        if color["in"].value():
+            color["out"].on()
+            if color["state"] == 0:
+                uasyncio.get_event_loop().create_task(self.press_button(color["color"]))
+            color["state"] = 1
         else:
-            color_def[1].off()
-            self.last_state = 0
+            color["out"].off()
+            color["state"] = 0
 
     @classmethod
     def create_from_pin_setup(
