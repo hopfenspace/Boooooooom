@@ -3,23 +3,53 @@
 #include <map>
 
 #include <Arduino.h>
+#include <WiFi.h>
 
 #include <EventLoop.hpp>
-#include <BMP.hpp>  
+#include <BMP.hpp>
 
-#define ADDRESS 0
+#define CAN_ADDRESS 0
+/*
+#define SR_0_LATCH
+#define SR_0_CLK
+#define SR_0_DATA
+
+#define SR_1_LATCH
+#define SR_1_CLK
+#define SR_1_DATA
+
+#define DIFF_0
+#define DIFF_1
+#define DIFF_2
+#define DIFF_3
+#define DIFF_4
+#define DIFF_5
+#define DIFF_6
+*/
 
 enum DIFFICULTY {IMMORTAL = 0, TRAINING = 1, EASY = 2, NORMAL = 3, HARD = 4, EXPERT = 5, PREPARE_2_DIE = 6};
+
+const char* wifiSSID = "BOMBENKOFFER";
+std::string style = R"(
+<style>
+body {
+    margin: 1rem;
+    font-family: "Bitstream Vera Sans Mono", Monaco, "Courier New", Courier, monospace;
+}
+</style>
+)";
+WiFiServer server(80);
 
 std::set<int> addresses;
 std::map<int, bool> solvedStates;
 std::map<std::string, bool> labels;
+std::map<uint8_t, std::string> manuals;
 uint8_t maxStrikes;
 uint8_t strikes = 0;
 std::string serialNo;
 uint8_t difficulty;
 unsigned long startTime;
-// 1/10s as base unit 
+// 1/100s as base unit 
 unsigned long currentTimer;
 float timeFactor = 1.0;
 
@@ -53,6 +83,21 @@ void generateLabels() {
         }
         labels.insert(std::pair<std::string, bool>(label, rand() % 2));
     }
+}
+
+std::function<void()> calcTimer();
+std::function<void()> calcTimer() {
+    return [](){
+        currentTimer -= (int)(10 * timeFactor);
+        if(currentTimer <= 0) {
+            currentTimer = 0;
+            for(auto pair : solvedStates) {
+                BMP::reqEXPLODED(pair.first);
+            }
+            return;
+        }
+        addJob(millis()+100, calcTimer());
+    };
 }
 
 void processREGISTER(int sender, bool isRTR, std::vector<uint8_t> data) {
@@ -191,18 +236,49 @@ void processLABELS(int sender, bool isRTR, std::vector<uint8_t> data) {
     Serial.printf("Module %d wants to know the defined labels\n", sender);
 }
 
-std::function<void()> calcTimer();
-std::function<void()> calcTimer() {
+void processRTFM(int sender, bool isRTR, std::vector<uint8_t> data) {
+    if(isRTR) {
+        return;
+    }
+    std::string manual = "";
+    for(int i = 0; i < data.size(); i++) {
+        manual += (char)data[i];
+    }
+    if(manuals.count(sender)) {
+        manuals.at(sender) = manual;
+    } else {
+        manuals.emplace(std::pair<uint8_t, std::string>(sender, manual));
+    }
+    Serial.printf("Module %d sent its manual: %s\n", sender, manual.c_str());
+}
+
+std::function<void()> listenWifi() {
     return [](){
-        currentTimer -= (int)(10 * timeFactor);
-        if(currentTimer <= 0) {
-            currentTimer = 0;
-            for(auto pair : solvedStates) {
-                BMP::reqEXPLODED(pair.first);
+        WiFiClient client = server.available();
+        if(client) {
+            if (client.available()) {
+                client.println("HTTP/1.1 200 OK");
+                client.println("Content-Type: text/html");
+                client.println("Connection: close");
+                client.println();
+                
+                client.println("<!DOCTYPE html><html lang=\"en\"><head>");
+                client.println("<meta charset=\"US-ASCII\">");
+                client.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">");
+                client.println("<title>Bomb manual</title>");
+                client.print(style.c_str());
+                client.println("</head><body>");
+                client.println("<h1>Bomb manual</h1>");
+                client.println("<p>The following headings describe all the modules located in the bomb.</p>");
+                for(auto i : manuals) {
+                    client.print(i.second.c_str());
+                }
+                client.println("</body>");
+                client.flush();
+                client.stop();
             }
-            return;
         }
-        addJob(millis()+100, calcTimer());
+        addJob(millis()+100, listenWifi());
     };
 }
 
@@ -217,17 +293,18 @@ void setup() {
     maxStrikes = 3;
     // * 100 for 1/100s
     currentTimer = 300 * 100;
+    addJob(millis(), calcTimer());
 
     setSerial();
     Serial.printf("Generated serial_no: %s\n", serialNo.c_str());
 
     generateLabels();
-    Serial.println("Generated labels:");
+        Serial.println("Generated labels:");
     for(auto label : labels) {
         Serial.printf("%s : %d\n", label.first.c_str(), label.second);
     }
 
-    BMP::setAddress(ADDRESS);
+    BMP::setAddress(CAN_ADDRESS);
     BMP::setCallback(MSG_TYPE::REGISTER, processREGISTER);
     BMP::setCallback(MSG_TYPE::STRIKE, processSTRIKE);
     BMP::setCallback(MSG_TYPE::DETONATE, processDETONATE);
@@ -242,7 +319,19 @@ void setup() {
     BMP::setCallback(MSG_TYPE::SERIAL_NO, processSERIAL_NO);
     BMP::setCallback(MSG_TYPE::DIFFICULTY, processDIFFICULTY);
     BMP::setCallback(MSG_TYPE::MAX_STRIKES, processMAX_STRIKES);
+    BMP::setCallback(MSG_TYPE::RTFM, processRTFM);
     BMP::begin(1E6);
 
-    addJob(millis(), calcTimer());
+    for(int i = 1; i < 16; i++) {
+        BMP::reqRTFM(i);
+    }
+
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(wifiSSID);
+    IPAddress IP = WiFi.softAPIP();
+    Serial.print("AP IP address: ");
+    Serial.println(IP);
+    server.begin();
+    server.setTimeout(3);
+    addJob(millis(), listenWifi());
 }
