@@ -135,6 +135,11 @@ class SimonSaysGame(SimonSays):
     Simon Says game using hardware pins to configure interrupt handlers
     """
 
+    LED_FLASH_TIME_MS = 400  # duration the LED is on
+    LED_BETWEEN_TIME_MS = 400  # duration between two LED flashes
+    LED_REPEAT_TIME_MS = 2000  # duration before repeating the LED flashing
+    LED_RESTART_TIME_MS = 3000  # duration before restarting the LED flashing after user input
+
     def __init__(self, difficulty: str, button_setup: dict):
         super().__init__(list(button_setup.keys()), difficulty)
         self.buttons = button_setup
