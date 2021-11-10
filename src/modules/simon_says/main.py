@@ -146,10 +146,10 @@ class SimonSaysGame(SimonSays):
         super().__init__(list(button_setup.keys()), difficulty)
         self.buttons = button_setup
 
-        def handle_b(_): self.handle(self.buttons["BLUE"])
-        def handle_g(_): self.handle(self.buttons["GREEN"])
-        def handle_r(_): self.handle(self.buttons["RED"])
-        def handle_y(_): self.handle(self.buttons["YELLOW"])
+        def handle_b(_): self.handle("BLUE")
+        def handle_g(_): self.handle("GREEN")
+        def handle_r(_): self.handle("RED")
+        def handle_y(_): self.handle("YELLOW")
 
         self.buttons["BLUE"]["in"].irq(handler=handle_b, trigger=machine.Pin.IRQ_RISING)
         self.buttons["GREEN"]["in"].irq(handler=handle_g, trigger=machine.Pin.IRQ_RISING)
@@ -173,12 +173,15 @@ class SimonSaysGame(SimonSays):
         await uasyncio.sleep_ms(self.LED_RESTART_TIME_MS)
         self.current_task = uasyncio.get_event_loop().create_task(self.blink())
 
-    def handle(self, color: dict):
+    def handle(self, color: str):
         button = self.buttons[color]
-        self.current_task.cancel()
         if button["in"].value():
             button["out"].on()
             if button["state"] == 0:
+                self.current_task.cancel()
+                for c in self.buttons:
+                    if c != color:
+                        self.buttons[c]["out"].value(0)
                 uasyncio.get_event_loop().create_task(self.press_button(button["color"]))
                 self.current_task = uasyncio.get_event_loop().create_task(self.restart_blinking())
             button["state"] = 1
