@@ -9,7 +9,7 @@
 #define MASTER_DEVICE 0
 
 std::map<uint8_t, std::function<void(uint8_t, bool, std::vector<uint8_t>)>> callbacks;
-std::map<uint8_t, std::vector<uint8_t>> slicedTransmissions;
+std::map<uint16_t, std::vector<uint8_t>> slicedTransmissions;
 std::set<int> customMSGTypes;
 uint8_t address;
 std::set<uint8_t> reqOnly {
