@@ -4,7 +4,9 @@ import time
 import random
 import machine
 import uasyncio
+import micropython
 
+micropython.alloc_emergency_exception_buf(128)
 
 NL = "\n"
 VOWELS = "AEIOU"
