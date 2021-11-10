@@ -31,7 +31,7 @@ class SimonSays:
         self._colors = colors
         self._difficulty = difficulty
         self.difficulty = self.DIFFICULTIES[difficulty]
-        self.complete_output = [random.choice(list(self._colors)) for _ in range(self.difficulty[0])]
+        self.complete_output = [random.choice(self._colors) for _ in range(self.difficulty[0])]
 
         def _shuffle(lst):
             for i in reversed(range(1, len(lst))):
@@ -41,7 +41,7 @@ class SimonSays:
 
         self.mappings = [
             {
-                k: dict(zip(list(self._colors), _shuffle(list(self._colors))))
+                k: dict(zip(list(self._colors), _shuffle(self._colors)))
                 for k in [(0, True), (1, True), (2, True), (0, False), (1, False), (2, False)]
             }
             for _ in range(self.difficulty[1])
@@ -142,12 +142,30 @@ class SimonSaysGame(SimonSays):
         for button in self.buttons:
             self.buttons[button]["in"].irq(handler=lambda _: self.handle(button), trigger=machine.Pin.IRQ_RISING)
 
+        self.current_task = uasyncio.get_event_loop().create_task(self.blink())
+
+    # This coroutine should be run as a task which could be cancelled on user input
+    async def blink(self):
+        for c in self.get_current_output():
+            self.buttons[c]["out"].value(1)
+            await uasyncio.sleep_ms(self.LED_FLASH_TIME_MS)
+            self.buttons[c]["out"].value(0)
+            await uasyncio.sleep_ms(self.LED_BETWEEN_TIME_MS)
+        await uasyncio.sleep_ms(self.LED_REPEAT_TIME_MS)
+        self.current_task = uasyncio.get_event_loop().create_task(self.blink())
+
+    # This coroutine should be run as a task which could be cancelled on user input
+    async def restart_blinking(self):
+        await uasyncio.sleep_ms(self.LED_RESTART_TIME_MS)
+        self.current_task = uasyncio.get_event_loop().create_task(self.blink())
 
     def handle(self, color: dict):
+        self.current_task.cancel()
         if color["in"].value():
             color["out"].on()
             if color["state"] == 0:
                 uasyncio.get_event_loop().create_task(self.press_button(color["color"]))
+                self.current_task = uasyncio.get_event_loop().create_task(self.restart_blinking())
             color["state"] = 1
         else:
             color["out"].off()
@@ -207,4 +225,4 @@ class SimonSaysGame(SimonSays):
         green = (machine.Pin(green_button_pin, machine.Pin.IN), machine.Pin(green_led_pin, machine.Pin.OUT))
         red = (machine.Pin(red_button_pin, machine.Pin.IN), machine.Pin(red_led_pin, machine.Pin.OUT))
         yellow = (machine.Pin(yellow_button_pin, machine.Pin.IN), machine.Pin(yellow_led_pin, machine.Pin.OUT))
-        return SimonSaysGame(difficulty, blue, green, red, yellow)
+        return SimonSaysGame.create_from_pin_setup(difficulty, blue, green, red, yellow)
