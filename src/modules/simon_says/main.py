@@ -49,6 +49,7 @@ class SimonSays:
             for _ in range(self.difficulty[1])
         ]
 
+        self.current_stage = 0
         self.current_step = 0
         self.finished = False
 
@@ -81,11 +82,13 @@ class SimonSays:
             await self.reset()
         else:
             self.current_step += 1
-            if self.current_step >= len(self.complete_output):
+            if self.current_step >= self.current_stage + 1:
+                self.current_stage += 1
+                self.current_step = 0
+                await self.next()
+            if self.current_stage >= len(self.complete_output):
                 self.finished = True
                 await self.finish()
-            else:
-                await self.next()
 
     def get_current_output(self) -> list:
         return self.complete_output[:self.current_step + 1]
