@@ -10,8 +10,10 @@ micropython.alloc_emergency_exception_buf(128)
 
 try:
     from simon_says import SimonSays
+    from bmp import AsyncBMP, BMP
 except ImportError:
     from ...lib.simon_says import SimonSays
+    from ...lib.bmp import AsyncBMP, BMP
 
 
 NL = "\n"
@@ -71,8 +73,11 @@ class SimonSaysGame(SimonSays):
     LED_REPEAT_TIME_MS = 2000  # duration before repeating the LED flashing
     LED_RESTART_TIME_MS = 3000  # duration before restarting the LED flashing after user input
 
-    def __init__(self, difficulty: str, button_setup: dict):
+    def __init__(self, can_address: int, difficulty: str, button_setup: dict):
         super().__init__(list(button_setup.keys()), difficulty)
+        self._can_address = can_address
+        self._synced_bmp = BMP(self._can_address)
+        self.bmp = AsyncBMP(self._can_address)
         self.buttons = button_setup
 
         def handle_b(_): self.handle("BLUE")
@@ -86,6 +91,14 @@ class SimonSaysGame(SimonSays):
         self.buttons["YELLOW"]["in"].irq(handler=handle_y, trigger=machine.Pin.IRQ_RISING)
 
         self.current_task = uasyncio.get_event_loop().create_task(self.blink())
+
+    def get_max_strikes(self):
+        if self._synced_bmp.data.max_strikes is not None:
+            return self._synced_bmp.data.max_strikes
+        self._synced_bmp.max_strikes()
+        while self._synced_bmp.data.max_strikes is None:
+            time.sleep_us(10)
+        return self._synced_bmp.data.max_strikes
 
     # This coroutine should be run as a task which could be cancelled on user input
     async def blink(self, wait_before_restart: bool = False):
