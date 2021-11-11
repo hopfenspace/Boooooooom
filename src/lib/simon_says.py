@@ -46,7 +46,7 @@ class SimonSays:
         "NORMAL": (4, 1),
         "HARD": (4, 2),
         "EXPERT": (6, 2),
-        "PREPARE_2_DIE": (6, 6)
+        "PREPARE_2_DIE": (7, 6)
     }
 
     def __init__(self, colors: list, difficulty: str):
