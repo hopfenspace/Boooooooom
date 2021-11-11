@@ -17,14 +17,15 @@ MANUAL_TEMPLATE = """<div class="simon-says"><h2>Simon Says</h2>
 <li>The original button will flash, followed by another. Repeat this sequence in order using the color mapping.</li>
 <li>The sequence will lengthen by one each time you correctly enter a sequence until the module is disarmed.</li>
 {list_ext}
-<li>The whole sequence contains between {min_seq_len} and {max_seq_len} stages in total.</li>
+<li>The whole sequence contains {seq_len} stages in total.</li>
 </ol>
 <h3>The serial number currently <u>does</u> contain a vowel</h3>
 {section_vowel}
 <h3>The serial number currently <u>does not</u> contain a vowel</h3>
-{section_no_vowel}
+{section_no_vowel}</div>
 """
-ROW_TEMPLATE = '<tr>{extra_td}<td class="simon-says-number">{strikes}</td><td>{c1}</td><td>{c2}</td><td>{c3}</td><td>{c4}</td></tr>'
+ROW_TEMPLATE = '<tr>{extra_td}<td class="simon-says-number">{strikes}</td>' \
+    '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'
 TABLE_TEMPLATE = """<table class="simon-says-table"><thead>
 <tr>{extra_th}<th>#Strikes</th><th>Blue LED</th><th>Green LED</th><th>Red LED</th><th>Yellow LED</th><tr>
 </thead><tbody>
@@ -60,13 +61,6 @@ class SimonSays:
                 lst[i], lst[j] = lst[j], lst[i]
             return lst
 
-        self.mappings_old = [
-            {
-                k: dict(zip(list(self._colors), _shuffle(self._colors)))
-                for k in [(0, True), (1, True), (2, True), (0, False), (1, False), (2, False)]
-            }
-            for _ in range(self.difficulty[1])
-        ]
         self.mappings = {
             k: [
                 {
@@ -82,9 +76,8 @@ class SimonSays:
         self.current_step = 0
         self.finished = False
 
-    @staticmethod
-    def get_max_strikes():
-        return 3  # TODO: ask the controller for this value
+    def get_max_strikes(self):
+        raise NotImplementedError
 
     async def get_serial_no(self):
         raise NotImplementedError
@@ -159,8 +152,7 @@ class SimonSays:
 
         return MANUAL_TEMPLATE.format(
             list_ext=list_ext,
-            min_seq_len=self.difficulty[0],
-            max_seq_len=self.difficulty[0]+1,
+            seq_len=self.difficulty[0],
             section_vowel=section_vowel,
             section_no_vowel=section_no_vowel
         )
