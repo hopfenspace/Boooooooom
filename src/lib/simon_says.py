@@ -113,4 +113,40 @@ class SimonSays:
         return self.complete_output[:self.current_step + 1]
 
     def generate_manual(self) -> str:
-        pass  # TODO
+        def _make_table(vowel: bool, extra_th: str, extra_td: str) -> str:
+            return TABLE_TEMPLATE.format(
+                extra_th=extra_th,
+                data_rows="\n".join([
+                    "\n".join([
+                        ROW_TEMPLATE.format(
+                            mapping[strike]["BLUE"].title(),
+                            mapping[strike]["GREEN"].title(),
+                            mapping[strike]["RED"].title(),
+                            mapping[strike]["YELLOW"].title(),
+                            extra_td=extra_td.format(i),
+                            strikes=strike
+                        )
+                        for strike in mapping
+                    ])
+                    for i, mapping in enumerate(self.mappings[vowel])
+                ])
+            )
+
+        if self.difficulty[1] > 1:
+            list_ext = "<li>There are multiple color mappings below, which must be iterated in every stage.</li>\n"
+            list_ext += "<li>This iteration will start over again at the beginning of the sequence.</li>"
+            section_no_vowel = _make_table(False, "<th>#Step</th>", '<td class="simon-says-number">{}</td>')
+            section_vowel = _make_table(True, "<th>#Step</th>", '<td class="simon-says-number">{}</td>')
+
+        else:
+            list_ext = ""
+            section_no_vowel = _make_table(False, "", "")
+            section_vowel = _make_table(True, "", "")
+
+        return MANUAL_TEMPLATE.format(
+            list_ext=list_ext,
+            min_seq_len=self.difficulty[0],
+            max_seq_len=self.difficulty[0]+1,
+            section_vowel=section_vowel,
+            section_no_vowel=section_no_vowel
+        )
