@@ -60,17 +60,31 @@ class SimonSays:
                 lst[i], lst[j] = lst[j], lst[i]
             return lst
 
-        self.mappings = [
+        self.mappings_old = [
             {
                 k: dict(zip(list(self._colors), _shuffle(self._colors)))
                 for k in [(0, True), (1, True), (2, True), (0, False), (1, False), (2, False)]
             }
             for _ in range(self.difficulty[1])
         ]
+        self.mappings = {
+            k: [
+                {
+                    s: dict(zip(list(self._colors), _shuffle(self._colors)))
+                    for s in range(self.get_max_strikes())
+                }
+                for _ in range(self.difficulty[1])  # Number of difficulties
+            ]
+            for k in (0, 1)  # Vowel in serial no.?
+        }
 
         self.current_stage = 0
         self.current_step = 0
         self.finished = False
+
+    @staticmethod
+    def get_max_strikes():
+        return 3  # TODO: ask the controller for this value
 
     async def get_serial_no(self):
         raise NotImplementedError
@@ -93,7 +107,7 @@ class SimonSays:
     async def press_button(self, button: str):
         serial = any([True for c in await self.get_serial_no() if c.upper() in VOWELS])
         strikes = await self.get_strikes()
-        current_mapping = self.mappings[self.current_step % len(self.mappings)][(strikes, serial)]
+        current_mapping = self.mappings[serial][self.current_step % len(self.mappings[serial])][strikes]
         if button != current_mapping[self.complete_output[self.current_step]]:
             self.current_step = 0
             if self._difficulty != "IMMORTAL":
