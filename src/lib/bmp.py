@@ -302,7 +302,7 @@ class AsyncBMP:
         async with self._lock:
             try:
                 # Get the current request
-                request: _Request = requests[MSG_TIMER]
+                request: _Request = requests[msg_type]
                 # Check if the request has already finished
                 new = request.event.is_set()
             except KeyError:
