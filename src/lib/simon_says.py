@@ -12,7 +12,7 @@ MANUAL_TEMPLATE = """<div class="simon-says"><h2>Simon Says</h2>
 .simon-says td.simon-says-number {{ text-align: center; }}
 </style>
 <ol>
-<li>One of the four colored buttons will flash.</li>
+<li>One of the {num_buttons} colored buttons will flash.</li>
 <li>Using the correct table below, press the button with the corresponding color.</li>
 <li>The original button will flash, followed by another. Repeat this sequence in order using the color mapping.</li>
 <li>The sequence will lengthen by one each time you correctly enter a sequence until the module is disarmed.</li>
@@ -151,6 +151,7 @@ class SimonSays:
             section_vowel = _make_table(True, "", "")
 
         return MANUAL_TEMPLATE.format(
+            num_buttons=len(self._colors),
             list_ext=list_ext,
             seq_len=self.difficulty[0],
             section_vowel=section_vowel,
