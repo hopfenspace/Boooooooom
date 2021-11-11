@@ -49,11 +49,15 @@ class SimonSays:
         "PREPARE_2_DIE": (7, 6)
     }
 
-    def __init__(self, colors: list, difficulty: str):
+    def __init__(self, colors: list, difficulty: str, seed: int, max_strikes: int):
         self._colors = colors
         self._difficulty = difficulty
+        self._seed = seed
+        self._max_strikes = max_strikes
         self.difficulty = self.DIFFICULTIES[difficulty]
         self.complete_output = [random.choice(self._colors) for _ in range(self.difficulty[0])]
+
+        random.seed(self._seed)
 
         def _shuffle(lst):
             for i in reversed(range(1, len(lst))):
@@ -65,7 +69,7 @@ class SimonSays:
             k: [
                 {
                     s: dict(zip(list(self._colors), _shuffle(self._colors)))
-                    for s in range(self.get_max_strikes())
+                    for s in range(self._max_strikes)
                 }
                 for _ in range(self.difficulty[1])  # Number of difficulties
             ]
@@ -75,9 +79,6 @@ class SimonSays:
         self.current_stage = 0
         self.current_step = 0
         self.finished = False
-
-    def get_max_strikes(self):
-        raise NotImplementedError
 
     async def get_serial_no(self):
         raise NotImplementedError
@@ -130,7 +131,7 @@ class SimonSays:
                             mapping[strike]["GREEN"].title(),
                             mapping[strike]["RED"].title(),
                             mapping[strike]["YELLOW"].title(),
-                            extra_td=extra_td.format(i),
+                            extra_td=extra_td.format(i+1),
                             strikes=strike
                         )
                         for strike in mapping

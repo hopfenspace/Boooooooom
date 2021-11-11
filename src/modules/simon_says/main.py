@@ -25,13 +25,10 @@ class SimonSaysConsole(SimonSays):
     Simon Says game usable in the interactive mode of Python for debugging
     """
 
-    def __init__(self, difficulty: str):
-        super().__init__(["BLUE", "GREEN", "RED", "YELLOW"], difficulty)
+    def __init__(self, difficulty: str, seed: int = None, max_strikes: int = 3):
+        super().__init__(["BLUE", "GREEN", "RED", "YELLOW"], difficulty, seed or random.randint(0, 0xff), max_strikes)
         self.static_serial = "".join([random.choice(ALPHABET) for _ in range(8)])
         self.static_strikes = random.randint(0, 2)
-
-    def get_max_strikes(self):
-        return 3
 
     async def get_serial_no(self):
         return self.static_serial
@@ -73,11 +70,9 @@ class SimonSaysGame(SimonSays):
     LED_REPEAT_TIME_MS = 2000  # duration before repeating the LED flashing
     LED_RESTART_TIME_MS = 3000  # duration before restarting the LED flashing after user input
 
-    def __init__(self, can_address: int, difficulty: str, button_setup: dict):
-        super().__init__(list(button_setup.keys()), difficulty)
-        self._can_address = can_address
-        self._synced_bmp = BMP(self._can_address)
-        self.bmp = AsyncBMP(self._can_address)
+    def __init__(self, bmp: AsyncBMP, difficulty: str, button_setup: dict, seed: int, max_strikes: int = 3):
+        super().__init__(list(button_setup.keys()), difficulty, seed, max_strikes)
+        self._bmp = bmp
         self.buttons = button_setup
 
         def handle_b(_): self.handle("BLUE")
