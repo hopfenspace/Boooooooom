@@ -3,6 +3,34 @@ import random
 
 VOWELS = "AEIOU"
 
+MANUAL_TEMPLATE = """<div class="simon-says"><h2>Simon Says</h2>
+<!-- even though it's crappy design, it's the easiest way to style our tables properly -->
+<style>
+.simon-says table, .simon-says th, .simon-says td {{ border: 1px solid black; border-collapse: collapse; }}
+.simon-says th {{ padding: 4px 16px; }}
+.simon-says td {{ padding: 1px 4px; }}
+.simon-says td.simon-says-number {{ text-align: center; }}
+</style>
+<ol>
+<li>One of the four colored buttons will flash.</li>
+<li>Using the correct table below, press the button with the corresponding color.</li>
+<li>The original button will flash, followed by another. Repeat this sequence in order using the color mapping.</li>
+<li>The sequence will lengthen by one each time you correctly enter a sequence until the module is disarmed.</li>
+{list_ext}
+<li>The whole sequence contains between {min_seq_len} and {max_seq_len} stages in total.</li>
+</ol>
+<h3>The serial number currently <u>does</u> contain a vowel</h3>
+{section_vowel}
+<h3>The serial number currently <u>does not</u> contain a vowel</h3>
+{section_no_vowel}
+"""
+ROW_TEMPLATE = '<tr>{extra_td}<td class="simon-says-number">{strikes}</td><td>{c1}</td><td>{c2}</td><td>{c3}</td><td>{c4}</td></tr>'
+TABLE_TEMPLATE = """<table class="simon-says-table"><thead>
+<tr>{extra_th}<th>#Strikes</th><th>Blue LED</th><th>Green LED</th><th>Red LED</th><th>Yellow LED</th><tr>
+</thead><tbody>
+{data_rows}
+</tbody></table>"""
+
 
 class SimonSays:
     """
