@@ -20,10 +20,6 @@ except ImportError:
         from ...lib.simon_says import SimonSays
 
 
-NL = "\n"
-ALPHABET = "ABCDEFGHIJKLMNOPRSTUVWXYZ0123456789"
-
-
 class SimonSaysConsole(SimonSays):
     """
     Simon Says game usable in the interactive mode of Python for debugging
@@ -31,7 +27,7 @@ class SimonSaysConsole(SimonSays):
 
     def __init__(self, difficulty: str, seed: int = None, max_strikes: int = 3):
         super().__init__(["BLUE", "GREEN", "RED", "YELLOW"], difficulty, seed or random.randint(0, 0xff), max_strikes)
-        self.static_serial = "".join([random.choice(ALPHABET) for _ in range(8)])
+        self.static_serial = "".join([random.choice("ABCDEFGHIJKLMNOPRSTUVWXYZ0123456789") for _ in range(8)])
         self.static_strikes = random.randint(0, 2)
 
     async def get_serial_no(self):
@@ -90,16 +86,6 @@ class SimonSaysGame(SimonSays):
         self.buttons["RED"]["in"].irq(handler=handle_r, trigger=machine.Pin.IRQ_RISING)
         self.buttons["YELLOW"]["in"].irq(handler=handle_y, trigger=machine.Pin.IRQ_RISING)
 
-        self.current_task = uasyncio.get_event_loop().create_task(self.blink())
-
-    def get_max_strikes(self):
-        if self._synced_bmp.data.max_strikes is not None:
-            return self._synced_bmp.data.max_strikes
-        self._synced_bmp.max_strikes()
-        while self._synced_bmp.data.max_strikes is None:
-            time.sleep_us(10)
-        return self._synced_bmp.data.max_strikes
-
     # This coroutine should be run as a task which could be cancelled on user input
     async def blink(self, wait_before_restart: bool = False):
         if wait_before_restart:
@@ -111,6 +97,16 @@ class SimonSaysGame(SimonSays):
             await uasyncio.sleep_ms(self.LED_BETWEEN_TIME_MS)
         await uasyncio.sleep_ms(self.LED_REPEAT_TIME_MS)
         self.current_task = uasyncio.get_event_loop().create_task(self.blink())
+
+    def start(self):
+        if self.current_task:
+            self.current_task.cancel()
+        self.current_task = uasyncio.get_event_loop().create_task(self.blink())
+
+    def stop(self):
+        self.current_task.cancel()
+        for c in self.buttons:
+            self.buttons[c]["out"].value(0)
 
     def handle(self, color: str):
         button = self.buttons[color]
@@ -211,12 +207,12 @@ class SimonSaysGameWrapper:
         self.bmp.request_handler[bmp.MSG_START] = self.handle_start
         self.bmp.request_handler[bmp.MSG_RTFM] = self.handle_rtfm
 
-    def handle_init(self):
+    def handle_init(self, _):
         if self.game is not None:
             self.game.stop()
         uasyncio.get_event_loop().create_task(self.init())
 
-    def handle_start(self):
+    def handle_start(self, _):
         if not self.game:
             uasyncio.run(self.init())
         self.game.start()
