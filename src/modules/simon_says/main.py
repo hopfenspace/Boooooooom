@@ -28,6 +28,9 @@ class SimonSaysConsole(SimonSays):
         self.static_serial = "".join([random.choice(ALPHABET) for _ in range(8)])
         self.static_strikes = random.randint(0, 2)
 
+    def get_max_strikes(self):
+        return 3
+
     async def get_serial_no(self):
         return self.static_serial
 
@@ -46,10 +49,12 @@ class SimonSaysConsole(SimonSays):
     async def finish(self):
         print("FINISH!")
 
-    def play_interactively(self):
+    def play_interactively(self, manual_path: str):
+        with open(manual_path, "w") as f:
+            f.write(self.generate_manual())
+        print(f"The manual is stored in {manual_path!r}")
         print(f"Strikes: {self.static_strikes}")
         print(f"Serial no: {self.static_serial}")
-        print(f"Mappings:\n{NL.join(str(mapping) for mapping in self.mappings)}")
         while not self.finished:
             print(" - ".join(self.get_current_output()))
             color = input("> ").upper()
