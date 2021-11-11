@@ -88,18 +88,15 @@ class SimonSaysGame(SimonSays):
         self.current_task = uasyncio.get_event_loop().create_task(self.blink())
 
     # This coroutine should be run as a task which could be cancelled on user input
-    async def blink(self):
+    async def blink(self, wait_before_restart: bool = False):
+        if wait_before_restart:
+            await uasyncio.sleep_ms(self.LED_RESTART_TIME_MS)
         for c in self.get_current_output():
             self.buttons[c]["out"].value(1)
             await uasyncio.sleep_ms(self.LED_FLASH_TIME_MS)
             self.buttons[c]["out"].value(0)
             await uasyncio.sleep_ms(self.LED_BETWEEN_TIME_MS)
         await uasyncio.sleep_ms(self.LED_REPEAT_TIME_MS)
-        self.current_task = uasyncio.get_event_loop().create_task(self.blink())
-
-    # This coroutine should be run as a task which could be cancelled on user input
-    async def restart_blinking(self):
-        await uasyncio.sleep_ms(self.LED_RESTART_TIME_MS)
         self.current_task = uasyncio.get_event_loop().create_task(self.blink())
 
     def handle(self, color: str):
@@ -112,7 +109,7 @@ class SimonSaysGame(SimonSays):
                     if c != color:
                         self.buttons[c]["out"].value(0)
                 uasyncio.get_event_loop().create_task(self.press_button(button["color"]))
-                self.current_task = uasyncio.get_event_loop().create_task(self.restart_blinking())
+                self.current_task = uasyncio.get_event_loop().create_task(self.blink(True))
             button["state"] = 1
         else:
             button["out"].off()
