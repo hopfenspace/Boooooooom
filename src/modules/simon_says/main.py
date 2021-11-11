@@ -9,11 +9,15 @@ import micropython
 micropython.alloc_emergency_exception_buf(128)
 
 try:
+    import bmp
     from simon_says import SimonSays
-    from bmp import AsyncBMP, BMP
 except ImportError:
-    from ...lib.simon_says import SimonSays
-    from ...lib.bmp import AsyncBMP, BMP
+    try:
+        from lib import bmp
+        from lib.simon_says import SimonSays
+    except ImportError:
+        from ...lib import bmp
+        from ...lib.simon_says import SimonSays
 
 
 NL = "\n"
@@ -70,10 +74,11 @@ class SimonSaysGame(SimonSays):
     LED_REPEAT_TIME_MS = 2000  # duration before repeating the LED flashing
     LED_RESTART_TIME_MS = 3000  # duration before restarting the LED flashing after user input
 
-    def __init__(self, bmp: AsyncBMP, difficulty: str, button_setup: dict, seed: int, max_strikes: int = 3):
+    def __init__(self, bmp_: bmp.AsyncBMP, difficulty: str, button_setup: dict, seed: int, max_strikes: int = 3):
         super().__init__(list(button_setup.keys()), difficulty, seed, max_strikes)
-        self._bmp = bmp
+        self._bmp = bmp_
         self.buttons = button_setup
+        self.current_task = None
 
         def handle_b(_): self.handle("BLUE")
         def handle_g(_): self.handle("GREEN")
@@ -187,3 +192,48 @@ def get_buttons_by_setup() -> dict:
         (machine.Pin(red_button_pin, machine.Pin.IN), machine.Pin(red_led_pin, machine.Pin.OUT)),
         (machine.Pin(yellow_button_pin, machine.Pin.IN), machine.Pin(yellow_led_pin, machine.Pin.OUT)),
     )
+
+
+class SimonSaysGameWrapper:
+    """
+    Wrapper around the SimonSaysGame class to enable proper startup & shutdown
+
+    This class should be considered a singleton.
+    """
+
+    def __init__(self):
+        self.address: int = 12  # TODO: this must be read via/from hardware
+        self.game = None
+        self.bmp = bmp.AsyncBMP(self.address)
+
+        self.bmp.request_handler[bmp.MSG_INIT] = self.handle_init
+        self.bmp.request_handler[bmp.MSG_RESET] = self.handle_init
+        self.bmp.request_handler[bmp.MSG_START] = self.handle_start
+        self.bmp.request_handler[bmp.MSG_RTFM] = self.handle_rtfm
+
+    def handle_init(self):
+        if self.game is not None:
+            self.game.stop()
+        uasyncio.get_event_loop().create_task(self.init())
+
+    def handle_start(self):
+        if not self.game:
+            uasyncio.run(self.init())
+        self.game.start()
+
+    def handle_rtfm(self, _):
+        uasyncio.get_event_loop().create_task(self.bmp.send(bmp.MASTER, bmp.MSG_RTFM, self.game.generate_manual()))
+
+    async def init(self):
+        if self.game is not None:
+            self.game.stop()
+        self.game = None
+        seed = await self.bmp.seed()
+        difficulty = await self.bmp.difficulty()
+        max_strikes = await self.bmp.max_strikes()
+        self.game = SimonSaysGame(self.bmp, difficulty, get_buttons_by_setup(), seed, max_strikes)
+
+    async def main(self):
+        self.bmp.register()
+        while True:
+            uasyncio.sleep(60)
