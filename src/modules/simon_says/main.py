@@ -149,15 +149,14 @@ class SimonSaysGame(SimonSays):
         print("Done.")
 
     @classmethod
-    def create_from_pin_setup(
+    def create_buttons_from_pin_setup(
             cls,
-            difficulty: str,
             blue: (machine.Pin, machine.Pin),
             green: (machine.Pin, machine.Pin),
             red: (machine.Pin, machine.Pin),
             yellow: (machine.Pin, machine.Pin)
-    ):
-        buttons = {
+    ) -> dict:
+        return {
             "BLUE": {
                 "in": blue[0],
                 "out": blue[1],
@@ -183,23 +182,13 @@ class SimonSaysGame(SimonSays):
                 "state": 0
             }
         }
-        return SimonSaysGame(difficulty, buttons)
 
-    @classmethod
-    def create_from_pin_ids(
-            cls,
-            difficulty: str,
-            blue_button_pin: int,
-            blue_led_pin: int,
-            green_button_pin: int,
-            green_led_pin: int,
-            red_button_pin: int,
-            red_led_pin: int,
-            yellow_button_pin: int,
-            yellow_led_pin: int
-    ):
-        blue = (machine.Pin(blue_button_pin, machine.Pin.IN), machine.Pin(blue_led_pin, machine.Pin.OUT))
-        green = (machine.Pin(green_button_pin, machine.Pin.IN), machine.Pin(green_led_pin, machine.Pin.OUT))
-        red = (machine.Pin(red_button_pin, machine.Pin.IN), machine.Pin(red_led_pin, machine.Pin.OUT))
-        yellow = (machine.Pin(yellow_button_pin, machine.Pin.IN), machine.Pin(yellow_led_pin, machine.Pin.OUT))
-        return SimonSaysGame.create_from_pin_setup(difficulty, blue, green, red, yellow)
+
+# Adapt this function according to the used hardware & wire setup
+def get_buttons_by_setup() -> dict:
+    return SimonSaysGame.create_buttons_from_pin_setup(
+        (machine.Pin(blue_button_pin, machine.Pin.IN), machine.Pin(blue_led_pin, machine.Pin.OUT)),
+        (machine.Pin(green_button_pin, machine.Pin.IN), machine.Pin(green_led_pin, machine.Pin.OUT)),
+        (machine.Pin(red_button_pin, machine.Pin.IN), machine.Pin(red_led_pin, machine.Pin.OUT)),
+        (machine.Pin(yellow_button_pin, machine.Pin.IN), machine.Pin(yellow_led_pin, machine.Pin.OUT)),
+    )
