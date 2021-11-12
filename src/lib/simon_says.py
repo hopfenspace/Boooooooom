@@ -40,7 +40,7 @@ class SimonSays:
 
     # Mapping from difficulty to number of colors and number of different color mappings
     DIFFICULTIES = {
-        "IMMORTAL": (1, 1),
+        "IMMORTAL": (4, 1),
         "TRAINING": (2, 1),
         "EASY": (3, 1),
         "NORMAL": (4, 1),
