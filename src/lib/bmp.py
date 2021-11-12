@@ -105,7 +105,7 @@ class AsyncBMP:
         """map from (sender, msg_type) to string"""
 
         self._requests = {}
-        """Map from msg_type to ongoing request of that type"""
+        """Map from (msg_type, target) to ongoing request to that target of that type"""
         self._lock = uasyncio.Lock()
         """Lock to sync write access to the _requests dict"""
 
@@ -136,8 +136,8 @@ class AsyncBMP:
 
     def _on_data(self, sender, msg_type, data):
         # TODO handle request to multiple devices!!!
-        if msg_type in self._requests:
-            request = self._requests[msg_type]
+        if (msg_type, sender) in self._requests:
+            request = self._requests[(msg_type, sender)]
             if not request.event.is_set():
                 request.data = data
 
@@ -156,7 +156,7 @@ class AsyncBMP:
         async with self._lock:
             try:
                 # Get the current request
-                request: _Request = requests[msg_type]
+                request: _Request = requests[(msg_type, recipient)]
                 # Check if the request has already finished
                 new = request.event.is_set()
             except KeyError:
@@ -166,7 +166,7 @@ class AsyncBMP:
             if new:
                 # Create new request object
                 request = _Request()
-                requests[msg_type] = request
+                requests[(msg_type, recipient)] = request
 
         if new:
             self.request(recipient, msg_type)
