@@ -88,6 +88,8 @@ class SimonSaysGame(SimonSays):
 
     # This coroutine should be run as a task which could be cancelled on user input
     async def blink(self, wait_before_restart: bool = False):
+        if not self.enabled:
+            return
         if wait_before_restart:
             await uasyncio.sleep_ms(self.LED_RESTART_TIME_MS)
         for c in self.get_current_output():
@@ -101,14 +103,18 @@ class SimonSaysGame(SimonSays):
     def start(self):
         if self.current_task:
             self.current_task.cancel()
+        self.enabled = True
         self.current_task = uasyncio.get_event_loop().create_task(self.blink())
 
     def stop(self):
+        self.enabled = False
         self.current_task.cancel()
         for c in self.buttons:
             self.buttons[c]["out"].value(0)
 
     def handle(self, color: str):
+        if not self.enabled:
+            return
         button = self.buttons[color]
         if button["in"].value():
             button["out"].on()
@@ -153,30 +159,10 @@ class SimonSaysGame(SimonSays):
             yellow: (machine.Pin, machine.Pin)
     ) -> dict:
         return {
-            "BLUE": {
-                "in": blue[0],
-                "out": blue[1],
-                "color": "BLUE",
-                "state": 0
-            },
-            "GREEN": {
-                "in": green[0],
-                "out": green[1],
-                "color": "GREEN",
-                "state": 0
-            },
-            "RED": {
-                "in": red[0],
-                "out": red[1],
-                "color": "RED",
-                "state": 0
-            },
-            "YELLOW": {
-                "in": yellow[0],
-                "out": yellow[1],
-                "color": "YELLOW",
-                "state": 0
-            }
+            "BLUE": {"in": blue[0], "out": blue[1], "color": "BLUE", "state": 0},
+            "GREEN": {"in": green[0], "out": green[1], "color": "GREEN", "state": 0},
+            "RED": {"in": red[0], "out": red[1], "color": "RED", "state": 0},
+            "YELLOW": {"in": yellow[0], "out": yellow[1], "color": "YELLOW", "state": 0}
         }
 
 
@@ -206,6 +192,12 @@ class SimonSaysGameWrapper:
         self.bmp.request_handler[bmp.MSG_RESET] = self.handle_init
         self.bmp.request_handler[bmp.MSG_START] = self.handle_start
         self.bmp.request_handler[bmp.MSG_RTFM] = self.handle_rtfm
+        self.bmp.request_handler[bmp.MSG_DEFUSED] = self.handle_defused
+        self.bmp.request_handler[bmp.MSG_EXPLODED] = self.handle_exploded
+        self.bmp.request_handler[bmp.MSG_VERSION] = self.handle_version
+        self.bmp.request_handler[bmp.MSG_MODULE_INFO] = self.handle_module_info
+        self.bmp.request_handler[bmp.MSG_BLACKOUT] = self.handle_blackout
+        self.bmp.request_handler[bmp.MSG_IS_SOLVED] = self.handle_is_solved
 
     def handle_init(self, _):
         if self.game is not None:
@@ -219,6 +211,24 @@ class SimonSaysGameWrapper:
 
     def handle_rtfm(self, _):
         uasyncio.get_event_loop().create_task(self.bmp.send(bmp.MASTER, bmp.MSG_RTFM, self.game.generate_manual()))
+
+    def handle_defused(self, _):
+        print("Not implemented: handle_defused")
+
+    def handle_exploded(self, _):
+        print("Not implemented: handle_exploded")
+
+    def handle_version(self, _):
+        print("Not implemented: handle_version")
+
+    def handle_module_info(self, _):
+        print("Not implemented: handle_module_info")
+
+    def handle_blackout(self, _):
+        print("Not implemented: handle_blackout")
+
+    def handle_is_solved(self, _):
+        print("Not implemented: handle_is_solved")
 
     async def init(self):
         if self.game is not None:

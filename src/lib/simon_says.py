@@ -79,6 +79,7 @@ class SimonSays:
         self.current_stage = 0
         self.current_step = 0
         self.finished = False
+        self.enabled = False
 
     async def get_serial_no(self):
         raise NotImplementedError
@@ -99,6 +100,8 @@ class SimonSays:
         raise NotImplementedError
 
     async def press_button(self, button: str):
+        if not self.enabled:
+            return
         serial = any([True for c in await self.get_serial_no() if c.upper() in VOWELS])
         strikes = await self.get_strikes()
         current_mapping = self.mappings[serial][self.current_step % len(self.mappings[serial])][strikes]
