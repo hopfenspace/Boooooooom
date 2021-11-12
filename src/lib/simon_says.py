@@ -55,6 +55,8 @@ class SimonSays:
         self._seed = seed
         self._max_strikes = max_strikes
         self.difficulty = self.DIFFICULTIES[difficulty]
+
+        random.seed()
         self.complete_output = [random.choice(self._colors) for _ in range(self.difficulty[0])]
 
         random.seed(self._seed)
