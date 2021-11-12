@@ -85,161 +85,6 @@ def _parse_id(id_):
     return sender, recipient, msg_type, eot
 
 
-#                            #
-# Sync - the discouraged way #
-#                            #
-
-class _RequestableData:
-
-    __slots__ = ("version", "module_info", "timer", "serial_number", "strikes", "max_strikes",
-                 "modules", "active_modules", "difficulty", "labels", "is_solved")
-    _slave2slave = ("version", "module_info", "is_solved")
-
-    def __init__(self):
-        for attr in self.__slots__:
-            setattr(self, attr, None)
-        for attr in self._slave2slave:
-            data = {}
-            for i in range(12):
-                data[i] = None
-            setattr(self, attr, data)
-
-
-class BMP:
-
-    def __init__(self, address):
-        self.address = address
-
-        self._callbacks = {}
-        """functions taking the sender address, the data string and returning nothing"""
-        self._set_default_callback("timer", MSG_TIMER)
-        self._set_default_callback("serial_number", MSG_SERIAL_NO)
-        self._set_default_callback("strikes", MSG_STRIKES)
-        self._set_default_callback("max_strikes", MSG_MAX_STRIKES)
-        self._set_default_callback("modules", MSG_MODULE_COUNT)
-        self._set_default_callback("active_modules", MSG_ACTIVE_MODULE_COUNT)
-        self._set_default_callback("difficulty", MSG_DIFFICULTY)
-        self._set_default_callback("labels", MSG_LABELS)
-        self._set_default_callback("version", MSG_VERSION)
-        self._set_default_callback("module_info", MSG_MODULE_INFO)
-        self._set_default_callback("is_solved", MSG_IS_SOLVED)
-
-        self.request_handler = {}
-        """function taking the sender address and returning nothing"""
-
-        self._ongoing_data = {}
-        """map from (sender, msg_type) to string"""
-
-        self.data = _RequestableData()
-        """object the default callbacks store their data to"""
-
-        can.on_receive(self._on_receive)
-
-    def _on_receive(self, _):
-        id_, ext, request, data_or_dlc = can.receive()
-        sender, recipient, msg_type, eot = _parse_id(id_)
-        #print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
-        if recipient != self.address:
-            return
-        if request and msg_type in self.request_handler:
-            self.request_handler[msg_type](sender)
-        else:
-            if (sender, msg_type) in self._ongoing_data:
-                self._ongoing_data[(sender, msg_type)] += data_or_dlc
-            else:
-                self._ongoing_data[(sender, msg_type)] = data_or_dlc
-
-            if eot:
-                data = self._ongoing_data[(sender, msg_type)]
-                del self._ongoing_data[(sender, msg_type)]
-                if msg_type in self._callbacks:
-                    self._callbacks[msg_type](sender, data)
-
-    def _set_default_callback(self, attr, msg_type):
-        conv = _converter.setdefault(msg_type, _ascii)
-        if attr not in _RequestableData._slave2slave:
-            def callback(_, data):
-                setattr(self.data, attr, conv(data))
-        else:
-            def callback(sender, data):
-                getattr(self.data, attr)[sender] = conv(data)
-        self._callbacks[msg_type] = callback
-
-    def request(self, recipient, msg_type, callback=None):
-        can.transmit(_format_id(self.address, recipient, msg_type), True, True, 0)
-        if callback is not None:
-            self._callbacks[msg_type] = callback
-
-    def send(self, recipient, msg_type, data):
-        packets = len(data) // 8
-        if len(data) % 8 != 0:
-            packets += 1
-        for i in range(packets):
-            eot = 1 if i == packets-1 else 0
-            can.transmit(_format_id(self.address, recipient, msg_type, eot), True, False, data[i*8:])
-
-    # Request action from master
-    def register(self):
-        self.request(MASTER, MSG_REGISTER)
-
-    def strike(self):
-        self.request(MASTER, MSG_STRIKE)
-
-    def detonate(self):
-        self.request(MASTER, MSG_DETONATE)
-
-    def mark_solved(self):
-        self.request(MASTER, MSG_MARK_SOLVED)
-
-    def mark_reactivated(self):
-        self.request(MASTER, MSG_MARK_REACTIVATED)
-
-    def change_timer(self, timedelta):
-        self.send(MASTER, MSG_CHANGE_TIMER, timedelta.to_bytes(4, "big"))
-
-    def change_serial_no(self):
-        self.request(MASTER, MSG_CHANGE_SERIAL_NO)
-
-    # Request data from master
-    def timer(self):
-        self.request(MASTER, MSG_TIMER)
-
-    def serial_no(self):
-        self.request(MASTER, MSG_SERIAL_NO)
-
-    def strikes(self):
-        self.request(MASTER, MSG_STRIKES)
-
-    def max_strikes(self):
-        self.request(MASTER, MSG_MAX_STRIKES)
-
-    def modules(self):
-        self.request(MASTER, MSG_MODULE_COUNT)
-
-    def active_modules(self):
-        self.request(MASTER, MSG_ACTIVE_MODULE_COUNT)
-
-    def difficulty(self):
-        self.request(MASTER, MSG_DIFFICULTY)
-
-    def labels(self):
-        self.request(MASTER, MSG_LABELS)
-
-    # Request data from target
-    def version(self, target):
-        self.request(target, MSG_VERSION)
-
-    def module_info(self, target):
-        self.request(target, MSG_MODULE_INFO)
-
-    def is_solved(self, target):
-        self.request(target, MSG_IS_SOLVED)
-
-
-#                             #
-# Async - the recommended way #
-#                             #
-
 class _Request:
     __slots__ = ("event", "data")
 
@@ -269,11 +114,11 @@ class AsyncBMP:
     def _on_receive(self, _):
         id_, ext, request, data_or_dlc = can.receive()
         sender, recipient, msg_type, eot = _parse_id(id_)
-        #print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
+        # print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
         if recipient != self.address:
             return
-        if request and msg_type in self.request_handler:
-            self.request_handler[msg_type](sender)
+        if request:
+            self._on_request(sender, msg_type)
         else:
             if (sender, msg_type) in self._ongoing_data:
                 self._ongoing_data[(sender, msg_type)] += data_or_dlc
@@ -283,14 +128,23 @@ class AsyncBMP:
             if eot:
                 data = self._ongoing_data[(sender, msg_type)]
                 del self._ongoing_data[(sender, msg_type)]
+                self._on_data(sender, msg_type, data)
 
-                if msg_type in self._requests:
-                    request = self._requests[msg_type]
-                    if not request.event.is_set():
-                        request.data = data
-                        async def set_event():
-                            request.event.set()
-                        uasyncio.run(set_event())
+    def _on_request(self, requester, msg_type):
+        if msg_type in self.request_handler:
+            uasyncio.create_task(self.request_handler[msg_type](requester))
+
+    def _on_data(self, sender, msg_type, data):
+        # TODO handle request to multiple devices!!!
+        if msg_type in self._requests:
+            request = self._requests[msg_type]
+            if not request.event.is_set():
+                request.data = data
+
+                async def set_event():
+                    request.event.set()
+
+                uasyncio.run(set_event())
 
     def request(self, recipient, msg_type):
         # Just send the request over can
@@ -323,7 +177,7 @@ class AsyncBMP:
         else:
             return request.data
 
-    async def send(self, recipient, msg_type, data):
+    def send(self, recipient, msg_type, data):
         packets = len(data) // 8
         if len(data) % 8 != 0:
             packets += 1
@@ -387,3 +241,46 @@ class AsyncBMP:
 
     async def is_solved(self, target):
         return await self.request_data(target, MSG_IS_SOLVED)
+
+
+class SyncBMP(AsyncBMP):
+
+    def _on_request(self, requester, msg_type):
+        if msg_type in self.request_handler:
+            self.request_handler[msg_type](requester)
+
+    # Request data from master
+    def timer(self):
+        return uasyncio.run(super().timer())
+
+    def serial_no(self):
+        return uasyncio.run(super().serial_no())
+
+    def strikes(self):
+        return uasyncio.run(super().strikes())
+
+    def max_strikes(self):
+        return uasyncio.run(super().max_strikes())
+
+    def modules(self):
+        return uasyncio.run(super().modules())
+
+    def active_modules(self):
+        return uasyncio.run(super().active_modules())
+
+    def difficulty(self):
+        return uasyncio.run(super().difficulty())
+
+    def labels(self):
+        return uasyncio.run(super().labels())
+
+    # Request data from target
+    def version(self, target):
+        return uasyncio.run(super().version(target))
+
+    def module_info(self, target):
+        return uasyncio.run(super().module_info(target))
+
+    def is_solved(self, target):
+        return uasyncio.run(super().is_solved(target))
+
