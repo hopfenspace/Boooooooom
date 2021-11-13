@@ -85,12 +85,24 @@ def _parse_id(id_):
     return sender, recipient, msg_type, eot
 
 
-class _Request:
-    __slots__ = ("event", "data")
+class _Pointer:
+    """
+    This class just holds a single mutable value: `data`
 
-    def __init__(self):
-        self.event = uasyncio.Event()
-        self.data = None
+    It's purpose is to reduce lookups in the `AsyncBMP._requests` dict,
+    by being a static pointer to the updating inner data.
+    """
+    __slots__ = ("data",)
+
+    def __init__(self, data):
+        self.data = data
+
+    def __repr__(self):
+        return f"Pointer(data={repr(self.data)})"
+
+
+# Singleton indicating a running request
+_WAITING = object()
 
 
 class AsyncBMP:
@@ -105,7 +117,7 @@ class AsyncBMP:
         """map from (sender, msg_type) to string"""
 
         self._requests = {}
-        """Map from (msg_type, target) to ongoing request to that target of that type"""
+        """Map from (msg_type, target) to _Pointers to the request's data or the _WAITING singleton"""
         self._lock = uasyncio.Lock()
         """Lock to sync write access to the _requests dict"""
 
@@ -114,7 +126,6 @@ class AsyncBMP:
     def _on_receive(self, _):
         id_, ext, request, data_or_dlc = can.receive()
         sender, recipient, msg_type, eot = _parse_id(id_)
-        # print(f"Parsed packet: {sender=}, {recipient=}, {msg_type=}, {eot=}, {ext=}, {request=}, {repr(data_or_dlc)=}")
         if recipient != self.address:
             return
         if request:
@@ -135,16 +146,10 @@ class AsyncBMP:
             uasyncio.create_task(self.request_handler[msg_type](requester))
 
     def _on_data(self, sender, msg_type, data):
-        # TODO handle request to multiple devices!!!
         if (msg_type, sender) in self._requests:
-            request = self._requests[(msg_type, sender)]
-            if not request.event.is_set():
+            request: _Pointer = self._requests[(msg_type, sender)]
+            if request.data is _WAITING:
                 request.data = data
-
-                async def set_event():
-                    request.event.set()
-
-                uasyncio.run(set_event())
 
     def request(self, recipient, msg_type):
         # Just send the request over can
@@ -156,22 +161,24 @@ class AsyncBMP:
         async with self._lock:
             try:
                 # Get the current request
-                request: _Request = requests[(msg_type, recipient)]
+                request: _Pointer = requests[(msg_type, recipient)]
                 # Check if the request has already finished
-                new = request.event.is_set()
+                new = request.data is not _WAITING
             except KeyError:
                 # If there is no request yet, we have to create one
                 new = True
 
             if new:
                 # Create new request object
-                request = _Request()
+                request = _Pointer(_WAITING)
                 requests[(msg_type, recipient)] = request
 
         if new:
             self.request(recipient, msg_type)
 
-        await request.event.wait()
+        while request.data is _WAITING:
+            await uasyncio.sleep_ms(1)
+
         if msg_type in _converter:
             return _converter[msg_type](request.data)
         else:
@@ -284,3 +291,11 @@ class SyncBMP(AsyncBMP):
     def is_solved(self, target):
         return uasyncio.run(super().is_solved(target))
 
+
+class DebugBMP(AsyncBMP):
+
+    def _on_request(self, requester, msg_type):
+        print(f"{requester=} {msg_type=}")
+
+    def _on_data(self, sender, msg_type, data):
+        print(f"{sender=} {msg_type=} {data=}")
