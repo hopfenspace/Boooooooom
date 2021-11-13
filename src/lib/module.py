@@ -8,6 +8,21 @@ import can
 
 
 class Module:
+    """
+    This can be used as a base class for any module.
+
+    It registers its `on_<message>` methods as bmp request handlers
+    and provides a simple run method handling weird uasyncio stuff.
+
+    Usage:
+    - Extend this class and implement at least the `on_start`, `on_rtfm` and `on_module_info` methods.
+    - Create one object of your class and call `run` on it.
+
+    Notes:
+    - the constructor should only assign attributes which stay constant
+    - any value which might change during play, should be set in the `on_init` method
+      (don't forget to add an `await super().on_init(_)`!)
+    """
 
     def __init__(self, address):
         self.is_solved = False
@@ -36,6 +51,7 @@ class Module:
 
     async def _on_init(self, _):
         # Stop event loop and wait for new one to call `on_init`
+        # See `run` for more details
         asyncio.get_event_loop().stop()
 
     async def on_init(self, _):
@@ -75,13 +91,12 @@ class Module:
         # Reset event loop
         loop = asyncio.new_event_loop()
         while True:
-            # micropython has only one event loop so new_event_loop just resets it
-            # run_forever runs until a task (probably a reset message from the master) calls stop on it
-            # once stopped the infinite while loop resets the event_loop and restart it again
-            loop.create_task(_loop())
-            loop.run_forever()
-            loop = asyncio.new_event_loop()
-            loop.create_task(self.on_init(bmp.MASTER))
+            loop.create_task(_loop())  # Keep loop busy and stop him from stopping
+            loop.run_forever()  # Run until bmp receives a MSG_INIT (see `_on_init`)
+            loop = asyncio.new_event_loop()  # Reset event loop to clear old tasks
+            loop.create_task(self.on_init(bmp.MASTER))  # Schedule the module's actual `on_init`
+            # Reenter `while True` to start event_loop and run `on_init`
+        # This whole setup's purpose is to reset/ clear the event loop on a MSG_INIT
 
 
 class DebugModule(Module):
