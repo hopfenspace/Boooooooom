@@ -86,7 +86,7 @@ class Module:
         # Keep loop busy and stop him from stopping
         async def _loop():
             while True:
-                await asyncio.sleep(1)
+                await asyncio.sleep_ms(1)
 
         # Reset event loop
         loop = asyncio.new_event_loop()
