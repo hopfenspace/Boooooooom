@@ -49,4 +49,4 @@ class WireModule(Module):
         await self.bmp.send(requester, bmp.MSG_MODULE_INFO, "")
 
 
-WireModule(15).run()
+WireModule(15, []).run()
