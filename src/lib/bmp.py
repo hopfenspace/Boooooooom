@@ -292,10 +292,12 @@ class SyncBMP(AsyncBMP):
         return uasyncio.run(super().is_solved(target))
 
 
-class DebugBMP(AsyncBMP):
+class DebugBMP(SyncBMP):
 
     def _on_request(self, requester, msg_type):
+        super()._on_request(requester, msg_type)
         print(f"{requester=} {msg_type=}")
 
     def _on_data(self, sender, msg_type, data):
+        super()._on_data(sender, msg_type, data)
         print(f"{sender=} {msg_type=} {data=}")
