@@ -39,9 +39,6 @@ class SimonSaysConsole(SimonSays):
     async def strike(self):
         print("STRIKE!")
 
-    async def reset(self):
-        pass
-
     async def next(self):
         print("NEXT!")
 
@@ -85,6 +82,24 @@ class SimonSaysGame(SimonSays):
         self.buttons["GREEN"]["in"].irq(handler=handle_g, trigger=machine.Pin.IRQ_RISING)
         self.buttons["RED"]["in"].irq(handler=handle_r, trigger=machine.Pin.IRQ_RISING)
         self.buttons["YELLOW"]["in"].irq(handler=handle_y, trigger=machine.Pin.IRQ_RISING)
+
+    async def get_serial_no(self):
+        await self._bmp.serial_no()
+
+    async def get_strikes(self):
+        await self._bmp.strikes()
+
+    async def strike(self):
+        self._bmp.strike()
+
+    async def next(self):
+        if self.current_task:
+            self.current_task.cancel()
+        self.current_task = uasyncio.get_event_loop().create_task(self.blink(True))
+
+    async def finish(self):
+        self.stop()
+        self._bmp.mark_solved()
 
     # This coroutine should be run as a task which could be cancelled on user input
     async def blink(self, wait_before_restart: bool = False):

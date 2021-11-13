@@ -92,9 +92,6 @@ class SimonSays:
     async def strike(self):
         raise NotImplementedError
 
-    async def reset(self):
-        raise NotImplementedError
-
     async def next(self):
         raise NotImplementedError
 
@@ -111,7 +108,6 @@ class SimonSays:
             self.current_step = 0
             if self._difficulty != "IMMORTAL":
                 await self.strike()
-            await self.reset()
         else:
             self.current_step += 1
             if self.current_step >= self.current_stage + 1:
