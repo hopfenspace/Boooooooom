@@ -1,5 +1,8 @@
 from micropython import const
-import uasyncio
+try:
+    import uasyncio as asyncio
+except ImportError:
+    import asyncio
 import struct
 
 import can
@@ -118,7 +121,7 @@ class AsyncBMP:
 
         self._requests = {}
         """Map from (msg_type, target) to _Pointers to the request's data or the _WAITING singleton"""
-        self._lock = uasyncio.Lock()
+        self._lock = asyncio.Lock()
         """Lock to sync write access to the _requests dict"""
 
         can.on_receive(self._on_receive)
@@ -143,7 +146,7 @@ class AsyncBMP:
 
     def _on_request(self, requester, msg_type):
         if msg_type in self.request_handler:
-            uasyncio.create_task(self.request_handler[msg_type](requester))
+            asyncio.create_task(self.request_handler[msg_type](requester))
 
     def _on_data(self, sender, msg_type, data):
         if (msg_type, sender) in self._requests:
@@ -177,7 +180,7 @@ class AsyncBMP:
             self.request(recipient, msg_type)
 
         while request.data is _WAITING:
-            await uasyncio.sleep_ms(1)
+            await asyncio.sleep_ms(1)
 
         if msg_type in _converter:
             return _converter[msg_type](request.data)
@@ -258,38 +261,38 @@ class SyncBMP(AsyncBMP):
 
     # Request data from master
     def timer(self):
-        return uasyncio.run(super().timer())
+        return asyncio.run(super().timer())
 
     def serial_no(self):
-        return uasyncio.run(super().serial_no())
+        return asyncio.run(super().serial_no())
 
     def strikes(self):
-        return uasyncio.run(super().strikes())
+        return asyncio.run(super().strikes())
 
     def max_strikes(self):
-        return uasyncio.run(super().max_strikes())
+        return asyncio.run(super().max_strikes())
 
     def modules(self):
-        return uasyncio.run(super().modules())
+        return asyncio.run(super().modules())
 
     def active_modules(self):
-        return uasyncio.run(super().active_modules())
+        return asyncio.run(super().active_modules())
 
     def difficulty(self):
-        return uasyncio.run(super().difficulty())
+        return asyncio.run(super().difficulty())
 
     def labels(self):
-        return uasyncio.run(super().labels())
+        return asyncio.run(super().labels())
 
     # Request data from target
     def version(self, target):
-        return uasyncio.run(super().version(target))
+        return asyncio.run(super().version(target))
 
     def module_info(self, target):
-        return uasyncio.run(super().module_info(target))
+        return asyncio.run(super().module_info(target))
 
     def is_solved(self, target):
-        return uasyncio.run(super().is_solved(target))
+        return asyncio.run(super().is_solved(target))
 
 
 class DebugBMP(SyncBMP):
