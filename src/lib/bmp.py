@@ -212,7 +212,7 @@ class AsyncBMP:
         self.request(MASTER, MSG_MARK_REACTIVATED)
 
     def change_timer(self, timedelta):
-        self.send(MASTER, MSG_CHANGE_TIMER, timedelta.to_bytes(4, "big"))
+        self.send(MASTER, MSG_CHANGE_TIMER, timedelta.to_bytes(2, "big"))
 
     def change_serial_no(self):
         self.request(MASTER, MSG_CHANGE_SERIAL_NO)
