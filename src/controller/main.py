@@ -5,11 +5,13 @@ from bmp import *
 
 
 class Module:
-    __slots__ = ("id", "solved")
+    __slots__ = ("id", "solved", "manual", "info")
 
     def __init__(self, id_):
         self.id = id_
         self.solved = False
+        self.manual = None
+        self.info = None
 
 
 class ControllerBMP(AsyncBMP):
@@ -31,6 +33,8 @@ class Controller:
         self.bmp = ControllerBMP()
 
         self.bmp.request_handler[MSG_REGISTER] = self.add_module
+        self.bmp.data_handler[MSG_RTFM] = self.set_manual
+        self.bmp.data_handler[MSG_MODULE_INFO] = self.set_module_info
         self.bmp.request_handler[MSG_STRIKE] = self.add_strike
         self.bmp.request_handler[MSG_DETONATE] = self.detonate
         self.bmp.request_handler[MSG_MARK_SOLVED] = self.mark_solved
@@ -44,7 +48,7 @@ class Controller:
         self.bmp.request_handler[MSG_MODULE_COUNT] = self.send_module_count
         self.bmp.request_handler[MSG_ACTIVE_MODULE_COUNT] = self.send_active_module_count
         self.bmp.request_handler[MSG_DIFFICULTY] = self.send_difficulty
-        self.bmp.request_handler[MSG_LABELS] = None
+        self.bmp.request_handler[MSG_LABELS] = self.send_labels
 
         self.modules = []
         self.max_strikes = 3
@@ -65,6 +69,18 @@ class Controller:
             await asyncio.sleep_ms(1)
 
         for m in self.modules:
+            self.bmp.request(m.id, MSG_RTFM)
+            self.bmp.request(m.id, MSG_MODULE_INFO)
+
+        while True:
+            for m in self.modules:
+                if m.manual is None or m.info is None:
+                    break
+            else:
+                break
+            await asyncio.sleep_ms(1)
+
+        for m in self.modules:
             self.bmp.request(m.id, MSG_START)
 
         while True:
@@ -72,6 +88,12 @@ class Controller:
 
     async def add_module(self, module):
         self.modules.append(Module(module))
+
+    async def set_module_info(self, module, info):
+        self.modules[module].info = info
+
+    async def set_manual(self, module, manual):
+        self.modules[module].manual = manual
 
     async def add_strike(self, _):
         self.strikes += 1
