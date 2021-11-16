@@ -80,7 +80,6 @@ class SimonSays:
 
         self.current_stage = 0
         self.current_step = 0
-        self.finished = False
         self.enabled = False
 
     async def get_serial_no(self):
@@ -115,7 +114,6 @@ class SimonSays:
                 self.current_step = 0
                 await self.next()
             if self.current_stage >= len(self.complete_output):
-                self.finished = True
                 await self.finish()
 
     def get_current_output(self) -> list:
