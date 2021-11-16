@@ -3702,7 +3702,7 @@
   (gr_text "Morse\n" (at 127.1905 57.0865 90) (layer F.SilkS)
     (effects (font (size 1.5 1.5) (thickness 0.3)))
   )
-  (gr_text Strike (at 127.1905 63.8175 90) (layer F.SilkS)
+  (gr_text Strike (at 127.1905 63.8175 90) (layer B.Paste)
     (effects (font (size 1.5 1.5) (thickness 0.3)))
   )
   (gr_text Solved (at 127.254 70.866 90) (layer F.SilkS)
