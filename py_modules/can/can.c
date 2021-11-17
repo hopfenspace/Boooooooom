@@ -16,9 +16,13 @@
 #define BAUDRATE_50E3     50
 #define BAUDRATE_25E3     25
 
+MP_DEFINE_EXCEPTION(EspError, OSError)
+MP_DEFINE_EXCEPTION(EspTimeoutError, EspError)
+MP_DEFINE_EXCEPTION(EspStateError, EspError)
 #define ESP_ERR_CASE(error, string) case error: {char message[] = string; arg = mp_obj_new_str(message, strlen(message)); break;}
+#define ESP_ERR_CASE_EXCEPT(error, string, exception_name) case error: {char message[] = string; arg = mp_obj_new_str(message, strlen(message)); exception = &mp_type_##exception_name; break;}
 STATIC void raise_esp_err(esp_err_t error) {
-    const mp_obj_type_t *exception = &mp_type_RuntimeError;
+    const mp_obj_type_t *exception = &mp_type_EspError;
     mp_obj_t arg;
     switch (error) {
         case ESP_OK: return;
@@ -26,11 +30,11 @@ STATIC void raise_esp_err(esp_err_t error) {
 
         ESP_ERR_CASE(ESP_ERR_NO_MEM, "Out of memory")
         ESP_ERR_CASE(ESP_ERR_INVALID_ARG, "Invalid argument")
-        ESP_ERR_CASE(ESP_ERR_INVALID_STATE, "Invalid state")
+        ESP_ERR_CASE_EXCEPT(ESP_ERR_INVALID_STATE, "Invalid state", EspStateError)
         ESP_ERR_CASE(ESP_ERR_INVALID_SIZE, "Invalid size")
         ESP_ERR_CASE(ESP_ERR_NOT_FOUND, "Requested resource not found")
         ESP_ERR_CASE(ESP_ERR_NOT_SUPPORTED, "Operation or feature not supported")
-        ESP_ERR_CASE(ESP_ERR_TIMEOUT, "Operation timed out")
+        ESP_ERR_CASE_EXCEPT(ESP_ERR_TIMEOUT, "Operation timed out", EspTimeoutError)
         ESP_ERR_CASE(ESP_ERR_INVALID_RESPONSE, "Received response was invalid")
         ESP_ERR_CASE(ESP_ERR_INVALID_CRC, "CRC or checksum was invalid")
         ESP_ERR_CASE(ESP_ERR_INVALID_VERSION, "Version was invalid")
