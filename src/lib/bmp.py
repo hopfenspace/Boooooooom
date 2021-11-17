@@ -36,6 +36,17 @@ MSG_LABELS = const(0x16)
 MSG_BLACKOUT = const(0x17)  # request_handler required
 MSG_IS_SOLVED = const(0x18)  # request_handler required
 
+# List of difficulty names (use the numeric difficulty as index)
+DIFFICULTY_NAMES = [
+    "IMMORTAL",
+    "TRAINING",
+    "EASY",
+    "NORMAL",
+    "HARD",
+    "EXPERT",
+    "PREPARE_2_DIE"
+]
+
 
 def _ascii(data):
     return data
