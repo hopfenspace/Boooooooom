@@ -8,7 +8,7 @@ This directory contains custom c modules for micropython.
 
 Get the esp-idf for building the esp32 port:
 
-`git clone -b v4.2 --recursive https://github.com/espressif/esp-idf.git`
+`git clone -b v4.3.1 --recursive https://github.com/espressif/esp-idf.git`
 
 Go into the esp-idf repo and install it:
 

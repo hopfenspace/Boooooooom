@@ -39,7 +39,7 @@ else:
     index = c.find(after) + len(after) + 1
     c = c[:index] + """
     if (handler_extension != NULL) {
-        handler_extension(&event);
+        handler_extension(&events);
     }
 """ + c[index:]
 
