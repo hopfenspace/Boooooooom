@@ -35,6 +35,7 @@ MSG_DIFFICULTY = const(0x15)
 MSG_LABELS = const(0x16)
 MSG_BLACKOUT = const(0x17)  # request_handler required
 MSG_IS_SOLVED = const(0x18)  # request_handler required
+MSG_SEED = const(0x19)
 
 # List of difficulty names (use the numeric difficulty as index)
 DIFFICULTY_NAMES = [
@@ -46,6 +47,13 @@ DIFFICULTY_NAMES = [
     "EXPERT",
     "PREPARE_2_DIE"
 ]
+DIF_IMMORTAL = const(0)
+DIF_TRAINING = const(1)
+DIF_EASY = const(2)
+DIF_NORMAL = const(3)
+DIF_HARD = const(4)
+DIF_EXPERT = const(5)
+DIF_PREPARE_2_DIE = const(6)
 
 
 def _ascii(data):
@@ -80,6 +88,7 @@ _converter = {
     MSG_ACTIVE_MODULE_COUNT: _uint8,
     MSG_DIFFICULTY: _uint8,
     MSG_LABELS: _labels,
+    MSG_SEED: _uint32,
 }
 
 
@@ -253,6 +262,9 @@ class AsyncBMP:
     async def labels(self):
         return await self.request_data(MASTER, MSG_LABELS)
 
+    async def seed(self):
+        return await self.request_data(MASTER, MSG_SEED)
+
     # Request data from target
     async def version(self, target):
         return await self.request_data(target, MSG_VERSION)
@@ -294,6 +306,9 @@ class SyncBMP(AsyncBMP):
 
     def labels(self):
         return asyncio.run(super().labels())
+
+    def seed(self):
+        return asyncio.run(super().seed())
 
     # Request data from target
     def version(self, target):
