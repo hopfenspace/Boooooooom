@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import can
 import time
 import random
 import machine
@@ -53,7 +54,7 @@ class SimonSaysConsole(SimonSays):
     def play_interactively(self, manual_path: str):
         with open(manual_path, "w") as f:
             f.write(self.generate_manual())
-        print(f"The manual is stored in {manual_path!r}")
+        print(f"The manual is stored in: {manual_path}")
         print(f"Strikes: {self.static_strikes}")
         print(f"Serial no: {self.static_serial}")
         while not self.finished:
@@ -92,10 +93,10 @@ class SimonSaysGame(SimonSays):
         print(f"SimonSays({self._bmp.address}) [{time.ticks_ms()/1000:.3f}]: {msg}")
 
     async def get_serial_no(self):
-        await self._bmp.serial_no()
+        return await self._bmp.serial_no()
 
     async def get_strikes(self):
-        await self._bmp.strikes()
+        return await self._bmp.strikes()
 
     async def strike(self):
         self.log("Strike!")
@@ -154,7 +155,7 @@ class SimonSaysGame(SimonSays):
                 for c in self.buttons:
                     if c != color:
                         self.buttons[c]["out"].value(0)
-                self.log(f"Pressing button {color!r}!")
+                self.log(f"Pressing button '{color}'!")
                 uasyncio.get_event_loop().create_task(self.press_button(button["color"]))
                 self.current_task = uasyncio.get_event_loop().create_task(self.blink(True))
             button["state"] = 1
@@ -236,9 +237,11 @@ class SimonSaysGameWrapper(module.DebugModule):
         await super().on_init(_)
         self.bmp.register()
         self.game = None
-        seed = await self.bmp.seed()
-        difficulty = await self.bmp.difficulty()
+        # seed = await self.bmp.seed()
+        seed = 0x1337  # TODO: await the implementation of MSG_SEED
+        difficulty = bmp.DIFFICULTY_NAMES[await self.bmp.difficulty()]
         max_strikes = await self.bmp.max_strikes()
+        print(f"Using seed={seed}, difficulty={difficulty}, max_strikes={max_strikes}!")
         self.game = SimonSaysGame(self.bmp, difficulty, get_buttons_by_setup(), seed, max_strikes)
 
     async def on_start(self, _):
@@ -248,3 +251,21 @@ class SimonSaysGameWrapper(module.DebugModule):
     async def on_rtfm(self, _):
         await super().on_rtfm(_)
         uasyncio.get_event_loop().create_task(self.bmp.send(bmp.MASTER, bmp.MSG_RTFM, self.game.generate_manual()))
+
+
+# Main function to be executed to start the program
+def main():
+    print("Starting main program ...")
+    try:
+        can.stop()
+    except RuntimeError:
+        pass
+    can.start(1000)
+    module_address = 12  # TODO: this must be read via/from hardware
+    # uasyncio.get_event_loop().set_exception_handler(handle_exc)
+    wrapper = SimonSaysGameWrapper(module_address)
+    print("Running main task ...")
+    uasyncio.run(wrapper.run())
+
+
+# main()
