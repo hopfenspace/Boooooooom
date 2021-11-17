@@ -1,5 +1,10 @@
 import random
 
+try:
+    from .helpers import title
+except ImportError:
+    from lib.helpers import title
+
 
 VOWELS = "AEIOU"
 
@@ -126,10 +131,10 @@ class SimonSays:
                 data_rows="\n".join([
                     "\n".join([
                         ROW_TEMPLATE.format(
-                            mapping[strike]["BLUE"].title(),
-                            mapping[strike]["GREEN"].title(),
-                            mapping[strike]["RED"].title(),
-                            mapping[strike]["YELLOW"].title(),
+                            title(mapping[strike]["BLUE"]),
+                            title(mapping[strike]["GREEN"]),
+                            title(mapping[strike]["RED"]),
+                            title(mapping[strike]["YELLOW"]),
                             extra_td=extra_td.format(i+1),
                             strikes=strike
                         )
