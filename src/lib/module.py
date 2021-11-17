@@ -30,7 +30,7 @@ class Module:
         #  Stop can
         try:
             can.stop()
-        except RuntimeError:
+        except can.EspStateError:
             pass  # can wasn't running
 
         # Setup bmp connection

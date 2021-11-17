@@ -148,7 +148,7 @@ class Controller:
 
 try:
     can.stop()
-except RuntimeError:
+except can.EspStateError:
     pass
 
 can.start(1000)

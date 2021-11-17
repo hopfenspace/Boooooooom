@@ -156,6 +156,9 @@ STATIC const mp_rom_map_elem_t can_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_receive), MP_ROM_PTR(&receive_obj) },
     { MP_ROM_QSTR(MP_QSTR_on_receive), MP_ROM_PTR(&onReceive_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_pins), MP_ROM_PTR(&set_pins_obj) },
+    { MP_ROM_QSTR(MP_QSTR_EspError), MP_ROM_PTR(&mp_type_EspError) },
+    { MP_ROM_QSTR(MP_QSTR_EspStateError), MP_ROM_PTR(&mp_type_EspStateError) },
+    { MP_ROM_QSTR(MP_QSTR_EspTimeoutError), MP_ROM_PTR(&mp_type_EspTimeoutError) },
 };
 STATIC MP_DEFINE_CONST_DICT(can_module_globals, can_module_globals_table);
 
