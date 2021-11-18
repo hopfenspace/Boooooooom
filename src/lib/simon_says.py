@@ -84,8 +84,10 @@ class SimonSays:
         }
 
         self.current_stage = 0
-        self.current_step = 0
         self.enabled = False
+
+    def log(self, msg: str):
+        pass
 
     async def get_serial_no(self):
         raise NotImplementedError
@@ -102,27 +104,39 @@ class SimonSays:
     async def finish(self):
         raise NotImplementedError
 
-    async def press_button(self, button: str):
+    async def check_single_button(self, button: str, step = 0):
         if not self.enabled:
             return
         serial = any([True for c in await self.get_serial_no() if c.upper() in VOWELS])
         strikes = await self.get_strikes()
-        current_mapping = self.mappings[serial][self.current_step % len(self.mappings[serial])][strikes]
-        if button != current_mapping[self.complete_output[self.current_step]]:
-            self.current_step = 0
+        current_mapping = self.mappings[serial][self.current_stage % len(self.mappings[serial])][strikes]
+        if button != current_mapping[self.complete_output[step]]:
+            self.log(f"Pre-check failed in stage {self.current_stage} with button {button} as step {step}.")
             if self._difficulty != "IMMORTAL":
                 await self.strike()
+
+    async def press_buttons(self, buttons: list):
+        if not self.enabled:
+            return
+        serial = any([True for c in await self.get_serial_no() if c.upper() in VOWELS])
+        strikes = await self.get_strikes()
+        print(f"[DBG] {strikes=} {serial=} {self.current_stage=} {self.mappings=}")
+        current_mapping = self.mappings[serial][self.current_stage % len(self.mappings[serial])][strikes]
+        for i, button in enumerate(buttons):
+            if button != current_mapping[self.complete_output[i]]:
+                self.log(f"Check failed in step {i} with button {button}.")
+                if self._difficulty != "IMMORTAL":
+                    await self.strike()
+                break
+            self.log(f"Button {button} was correct.")
         else:
-            self.current_step += 1
-            if self.current_step >= self.current_stage + 1:
-                self.current_stage += 1
-                self.current_step = 0
-                await self.next()
-            if self.current_stage >= len(self.complete_output):
-                await self.finish()
+            self.current_stage += 1
+            await self.next()
+        if self.current_stage >= len(self.complete_output):
+            await self.finish()
 
     def get_current_output(self) -> list:
-        return self.complete_output[:self.current_step + 1]
+        return self.complete_output[:self.current_stage + 1]
 
     def generate_manual(self) -> str:
         def _make_table(vowel: bool, extra_th: str, extra_td: str) -> str:
