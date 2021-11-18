@@ -1,3 +1,4 @@
+import gc
 import random
 
 try:
@@ -28,15 +29,17 @@ MANUAL_TEMPLATE = """<div class="simon-says"><h2>Simon Says</h2>
 {section_vowel}
 <h3>The serial number currently <u>does not</u> contain a vowel</h3>
 {section_no_vowel}</div>
-"""
+""".replace("\n", "")
 ROW_TEMPLATE = '<tr>{extra_td}<td class="simon-says-number">{strikes}</td>' \
     '<td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'
 TABLE_TEMPLATE = """<table class="simon-says-table"><thead>
 <tr>{extra_th}<th>#Strikes</th><th>Blue LED</th><th>Green LED</th><th>Red LED</th><th>Yellow LED</th><tr>
 </thead><tbody>
 {data_rows}
-</tbody></table>"""
+</tbody></table>""".replace("\n", "")
 
+# Global cache of the current manual to avoid re-allocating large memory blocks
+CURRENT_MANUAL: str = "\x00" * 6144
 
 class SimonSays:
     """
@@ -85,6 +88,7 @@ class SimonSays:
 
         self.current_stage = 0
         self.enabled = False
+        self._generated_manual = False
 
     def log(self, msg: str):
         pass
@@ -139,6 +143,10 @@ class SimonSays:
         return self.complete_output[:self.current_stage + 1]
 
     def generate_manual(self) -> str:
+        global CURRENT_MANUAL
+        if self._generated_manual:
+            return CURRENT_MANUAL
+
         def _make_table(vowel: bool, extra_th: str, extra_td: str) -> str:
             return TABLE_TEMPLATE.format(
                 extra_th=extra_th,
@@ -169,10 +177,14 @@ class SimonSays:
             section_no_vowel = _make_table(False, "", "")
             section_vowel = _make_table(True, "", "")
 
-        return MANUAL_TEMPLATE.format(
+        del CURRENT_MANUAL
+        gc.collect()
+        CURRENT_MANUAL = MANUAL_TEMPLATE.format(
             num_buttons=len(self._colors),
             list_ext=list_ext,
             seq_len=self.difficulty[0],
             section_vowel=section_vowel,
             section_no_vowel=section_no_vowel
         )
+        self._generated_manual = True
+        return CURRENT_MANUAL
