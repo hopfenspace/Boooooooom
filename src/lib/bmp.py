@@ -147,22 +147,28 @@ class AsyncBMP:
         can.on_receive(self._on_receive)
 
     def _on_receive(self, _):
-        id_, ext, request, data_or_dlc = can.receive()
-        sender, recipient, msg_type, eot = _parse_id(id_)
-        if recipient != self.address:
+        try:
+            id_, ext, request, data_or_dlc = can.receive()
+        except can.EspTimeoutError:
             return
-        if request:
-            self._on_request(sender, msg_type)
-        else:
-            if (sender, msg_type) in self._ongoing_data:
-                self._ongoing_data[(sender, msg_type)] += data_or_dlc
+        sender, recipient, msg_type, eot = _parse_id(id_)
+        if recipient == self.address:
+            if request:
+                self._on_request(sender, msg_type)
             else:
-                self._ongoing_data[(sender, msg_type)] = data_or_dlc
+                if (sender, msg_type) in self._ongoing_data:
+                    self._ongoing_data[(sender, msg_type)] += data_or_dlc
+                else:
+                    self._ongoing_data[(sender, msg_type)] = data_or_dlc
 
-            if eot:
-                data = self._ongoing_data[(sender, msg_type)]
-                del self._ongoing_data[(sender, msg_type)]
-                self._on_data(sender, msg_type, data)
+                if eot:
+                    data = self._ongoing_data[(sender, msg_type)]
+                    del self._ongoing_data[(sender, msg_type)]
+                    self._on_data(sender, msg_type, data)
+        try:
+            self._on_receive(_)
+        except can.EspTimeoutError:
+            pass
 
     def _on_request(self, requester, msg_type):
         if msg_type in self.request_handler:

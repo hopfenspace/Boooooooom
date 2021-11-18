@@ -71,6 +71,7 @@ STATIC mp_obj_t start(mp_obj_t baudrate_obj) {
         default: mp_raise_ValueError("invalid baudrate"); break;
     }
     set_handler_extension(interupt_handler);
+    general.rx_queue_len = 20;
     ESP_ERR_RAISE_RETURN(twai_driver_install(&general, &timing, &filter));
     ESP_ERR_RAISE_RETURN(twai_start());
     return mp_const_none;
