@@ -111,7 +111,7 @@ class SimonSays:
     async def check_single_button(self, button: str, step = 0):
         if not self.enabled:
             return
-        serial = any([True for c in await self.get_serial_no() if c.upper() in VOWELS])
+        serial = any([True for c in (await self.get_serial_no()).upper() if c in VOWELS])
         strikes = await self.get_strikes()
         current_mapping = self.mappings[serial][self.current_stage % len(self.mappings[serial])][strikes]
         if button != current_mapping[self.complete_output[step]]:

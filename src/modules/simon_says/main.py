@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import gc
 import can
 import time
 import random
@@ -59,8 +60,8 @@ class SimonSaysConsole(SimonSays):
         print(f"Serial no: {self.static_serial}")
         while not self.finished:
             print(" - ".join(self.get_current_output()))
-            color = input("> ").upper()
-            uasyncio.run(self.press_button(color))
+            colors = input("> ").upper()
+            uasyncio.run(self.press_buttons(colors.split(" ")))
 
 
 class SimonSaysGame(SimonSays):
@@ -77,6 +78,7 @@ class SimonSaysGame(SimonSays):
         super().__init__(list(button_setup.keys()), difficulty, seed, max_strikes)
         self._bmp = bmp_
         self.buttons = button_setup
+        self.button_queue = []
         self.current_task = None
 
         def handle_b(_): self.handle("BLUE")
@@ -106,7 +108,7 @@ class SimonSaysGame(SimonSays):
         self.current_task = uasyncio.get_event_loop().create_task(self.blink(True))
 
     async def next(self):
-        self.log(f"Solved stage {self.current_stage - 1}!")
+        self.log(f"Solved stage {self.current_stage}!")
         if self.current_task:
             self.current_task.cancel()
         self.current_task = uasyncio.get_event_loop().create_task(self.blink(True))
@@ -156,8 +158,14 @@ class SimonSaysGame(SimonSays):
                     if c != color:
                         self.buttons[c]["out"].value(0)
                 self.log(f"Pressing button '{color}'!")
-                uasyncio.get_event_loop().create_task(self.press_button(button["color"]))
                 self.current_task = uasyncio.get_event_loop().create_task(self.blink(True))
+                self.button_queue.append(color)
+                if len(self.button_queue) > self.current_stage:
+                    self.log(f"Calling button checker with {self.button_queue}")
+                    uasyncio.get_event_loop().create_task(self.press_buttons(self.button_queue[:]))
+                    self.button_queue = []
+                else:
+                    uasyncio.get_event_loop().create_task(self.check_single_button(color, len(self.button_queue) - 1))
             button["state"] = 1
         else:
             button["out"].off()
@@ -244,13 +252,27 @@ class SimonSaysGameWrapper(module.DebugModule):
         print(f"Using seed={seed}, difficulty={difficulty}, max_strikes={max_strikes}!")
         self.game = SimonSaysGame(self.bmp, difficulty, get_buttons_by_setup(), seed, max_strikes)
 
+    async def on_defused(self, _):
+        await super().on_defused(_)
+        self.game.stop()
+        del self.game
+        gc.collect()
+        self.game = None
+
+    async def on_exploded(self, _):
+        await super().on_exploded(_)
+        self.game.stop()
+        del self.game
+        gc.collect()
+        self.game = None
+
     async def on_start(self, _):
         await super().on_start(_)
         self.game.start()
 
     async def on_rtfm(self, _):
         await super().on_rtfm(_)
-        uasyncio.get_event_loop().create_task(self.bmp.send(bmp.MASTER, bmp.MSG_RTFM, self.game.generate_manual()))
+        self.bmp.send(bmp.MASTER, bmp.MSG_RTFM, self.game.generate_manual())
 
 
 # Main function to be executed to start the program
