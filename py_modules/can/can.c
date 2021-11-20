@@ -113,7 +113,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR(transmit_obj, 4, transmit);
 
 STATIC mp_obj_t receive() {
     twai_message_t msg;
-    ESP_ERR_RAISE_RETURN(twai_receive(&msg, pdMS_TO_TICKS(10)));
+    ESP_ERR_RAISE_RETURN(twai_receive(&msg, 0));
     mp_obj_t items[4];
     items[0] = mp_obj_new_int(msg.identifier);
     items[1] = mp_obj_new_bool(msg.extd);
@@ -132,10 +132,43 @@ STATIC mp_obj_t receive() {
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(receive_obj, receive);
 
 STATIC mp_obj_t callback = NULL;
+STATIC mp_obj_t collect(mp_obj_t arg) {
+    twai_message_t msg;
+    esp_err_t result = twai_receive(&msg, 0);
+    if (result == ESP_OK) {
+        mp_obj_t list = mp_obj_new_list(0, NULL);
+        mp_obj_t items[4];
+        while (result == ESP_OK) {
+            // Add message to list
+            items[0] = mp_obj_new_int(msg.identifier);
+            items[1] = mp_obj_new_bool(msg.extd);
+            items[2] = mp_obj_new_bool(msg.rtr);
+            if (msg.rtr) {
+                items[3] = mp_obj_new_int(msg.data_length_code);
+            } else {
+                char data[8];
+                for (int i = 0; i < msg.data_length_code; i++) {
+                data[i] = (char) msg.data[i];
+                }
+                items[3] = mp_obj_new_str(data, msg.data_length_code);
+            }
+            mp_obj_list_append(list, mp_obj_new_tuple(4, items));
+
+            // Get next message
+            result = twai_receive(&msg, 0);
+        }
+        // Hand list of messages to user callback
+        mp_call_function_1(callback, list);
+    }
+    // Timeout is default exit, everything else is broken
+    if (result != ESP_ERR_TIMEOUT) raise_esp_err(result);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(collect_obj, collect);
 STATIC void interupt_handler(void *arg) {
     uint32_t event = *(uint32_t*)arg;
     if ((callback != NULL) && (event & TWAI_HAL_EVENT_RX_BUFF_FRAME)) {
-        mp_sched_schedule(callback, mp_const_none);
+        mp_sched_schedule(MP_OBJ_FROM_PTR(&collect_obj), mp_const_none);
     }
 }
 STATIC mp_obj_t onReceive(mp_obj_t callback_obj) {
