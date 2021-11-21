@@ -13,10 +13,18 @@
 
 ## Methods
 
-### `set_pins(tx, rx)`
+### `set_filter(code: int, mask: int)`
+For every bit set to `0` in `mask` an incoming package must match `code`'s bits.
+Where `mask` is `1` the `code`'s bits will be ignored.
+
+The layout, which `code` bit corresponds to which package bit,
+isn't trivial, so check the [official docs](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/twai.html#acceptance-filter).
+- Must be called before `start` to take effect.
+
+### `set_pins(tx: int, rx: int)`
 Specify the pins to use.
 Defaults to 5 and 4.
-This must be called before `start` to take effect.
+- Must be called before `start` to take effect.
 
 ### `start(baudrate: int)`
 Start the can module. The baudrate specifies kbit/s and only accepts values from [twai.c's macros](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/twai.html)
@@ -36,7 +44,10 @@ Stop the can module
 
 ### `on_receive(callback: Callable)`
 Set a callback to be called when a packet is received.
-This callback gets an argument which is always `None`.*
-To get the actual message the callback needs to call `can.receive()` itself.
+For performance reasons many multiple messages might be bundled together.
+So this callback receives a list of messages as argument.
+Each message is a tuple of the form
 
-*(micropython wants exactly one argument in order to make use of its scheduler)
+    (id_: int, is_extd: bool, is_request: bool, data_or_size: Union[str, int])
+
+Where `data_or_size` depends on whether the message is a request or not.
