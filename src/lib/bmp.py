@@ -144,7 +144,13 @@ class AsyncBMP:
         self._lock = asyncio.Lock()
         """Lock to sync write access to the _requests dict"""
 
+        try:
+            can.stop()
+        except can.EspStateError:
+            pass
         can.on_receive(self._on_receive)
+        can.set_filter(self.address << 16, (2**32-1)-(0xF << 24))
+        can.start(1000)
 
     def _on_receive(self, messages):
         for id_, ext, request, data_or_dlc in messages:

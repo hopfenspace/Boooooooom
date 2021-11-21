@@ -92,6 +92,13 @@ STATIC mp_obj_t set_pins(mp_obj_t tx, mp_obj_t rx) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(set_pins_obj, set_pins);
 
+STATIC mp_obj_t set_filter(mp_obj_t filter_obj, mp_obj_t mask_obj) {
+    filter.acceptance_code = mp_obj_int_get_uint_checked(filter_obj);
+    filter.acceptance_mask = mp_obj_int_get_uint_checked(mask_obj);
+    return mp_const_none;
+}
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(set_filter_obj, set_filter);
+
 STATIC mp_obj_t transmit(size_t nargs, const mp_obj_t *args) {//id, ext, rtr, dlc || data
     twai_message_t msg;
     msg.identifier = mp_obj_get_int(args[0]);
@@ -190,6 +197,7 @@ STATIC const mp_rom_map_elem_t can_module_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR_receive), MP_ROM_PTR(&receive_obj) },
     { MP_ROM_QSTR(MP_QSTR_on_receive), MP_ROM_PTR(&onReceive_obj) },
     { MP_ROM_QSTR(MP_QSTR_set_pins), MP_ROM_PTR(&set_pins_obj) },
+    { MP_ROM_QSTR(MP_QSTR_set_filter), MP_ROM_PTR(&set_filter_obj) },
     { MP_ROM_QSTR(MP_QSTR_EspError), MP_ROM_PTR(&mp_type_EspError) },
     { MP_ROM_QSTR(MP_QSTR_EspStateError), MP_ROM_PTR(&mp_type_EspStateError) },
     { MP_ROM_QSTR(MP_QSTR_EspTimeoutError), MP_ROM_PTR(&mp_type_EspTimeoutError) },
