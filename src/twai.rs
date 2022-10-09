@@ -176,6 +176,16 @@ pub enum InstallError {
     /// Arguments are invalid
     InvalidArgument,
 }
+impl From<EspError> for InstallError {
+    fn from(error: EspError) -> Self {
+        match error {
+            EspError::InvalidArgument => InstallError::InvalidArgument,
+            EspError::InvalidState => InstallError::AlreadyInstalled,
+            EspError::OutOfMemory => InstallError::OutOfMemory,
+            _ => unreachable!("twai_installs' error codes should be handled"),
+        }
+    }
+}
 
 /// Install TWAI driver.
 ///
@@ -188,13 +198,7 @@ pub fn install(
 ) -> Result<(), InstallError> {
     let code =
         unsafe { twai_driver_install(general as *const _, timing as *const _, filter as *const _) };
-    let result = EspError::convert(code);
-    result.map_err(|error| match error {
-        EspError::InvalidArgument => InstallError::InvalidArgument,
-        EspError::InvalidState => InstallError::AlreadyInstalled,
-        EspError::OutOfMemory => InstallError::OutOfMemory,
-        _ => unreachable!("All possible return codes should be handled"),
-    })
+    EspError::convert(code).map_err(From::from)
 }
 
 /// Start the TWAI driver.
@@ -230,6 +234,18 @@ pub enum TransmitError {
     /// The message's data length code is larger than the maximum
     TooMuchData,
 }
+impl From<EspError> for TransmitError {
+    fn from(error: EspError) -> Self {
+        match error {
+            EspError::InvalidArgument => TransmitError::TooMuchData,
+            EspError::InvalidState => TransmitError::NotRunning,
+            EspError::NotSupported => TransmitError::NotSupported,
+            EspError::Timeout => TransmitError::Timeout,
+            EspError::Fail => TransmitError::Busy,
+            _ => unreachable!("twai_transmit's error codes should be handled"),
+        }
+    }
+}
 
 /// Transmit a TWAI message.
 ///
@@ -241,15 +257,7 @@ pub enum TransmitError {
 /// This function can only be called when the TWAI driver is in the running state and cannot be called under Listen Only Mode.
 pub fn transmit(message: &twai_message_t, ticks_to_wait: TickType_t) -> Result<(), TransmitError> {
     let code = unsafe { twai_transmit(message as *const _, ticks_to_wait) };
-    let result = EspError::convert(code);
-    result.map_err(|error| match error {
-        EspError::InvalidArgument => TransmitError::TooMuchData,
-        EspError::InvalidState => TransmitError::NotRunning,
-        EspError::NotSupported => TransmitError::NotSupported,
-        EspError::Timeout => TransmitError::Timeout,
-        EspError::Fail => TransmitError::Busy,
-        _ => unreachable!("All possible return codes should be handled"),
-    })
+    EspError::convert(code).map_err(From::from)
 }
 
 /// Error occurring when performing a blocking read:
@@ -262,6 +270,18 @@ pub enum ReadError {
     /// TWAI driver is not installed
     NotInstalled,
 }
+impl From<EspError> for ReadError {
+    fn from(error: EspError) -> Self {
+        match error {
+            EspError::InvalidState => ReadError::NotInstalled,
+            EspError::Timeout => ReadError::Timeout,
+            EspError::InvalidArgument => {
+                unreachable!("A pointer to a stack variable shouldn't be null")
+            }
+            _ => unreachable!("twai_receive's or twai_read_alerts' error codes should be handled"),
+        }
+    }
+}
 
 /// Receive a TWAI message.
 ///
@@ -271,15 +291,7 @@ pub enum ReadError {
 pub fn receive(ticks_to_wait: TickType_t) -> Result<twai_message_t, ReadError> {
     let mut message = twai_message_t::default();
     let code = unsafe { twai_receive(&mut message as *mut _, ticks_to_wait) };
-    let result = EspError::convert(code);
-    result.map(|_| message).map_err(|error| match error {
-        EspError::InvalidState => ReadError::NotInstalled,
-        EspError::Timeout => ReadError::Timeout,
-        EspError::InvalidArgument => {
-            unreachable!("The pointer to the stack variable shouldn't be null")
-        }
-        _ => unreachable!("All possible return codes should be handled"),
-    })
+    EspError::convert(code).map(|_| message).map_err(From::from)
 }
 
 /// Stop the TWAI driver.
@@ -320,15 +332,7 @@ pub fn initiate_recovery() -> bool {
 pub fn read_alerts(ticks_to_wait: TickType_t) -> Result<u32, ReadError> {
     let mut alerts = 0;
     let code = unsafe { twai_read_alerts(&mut alerts as *mut _, ticks_to_wait) };
-    let result = EspError::convert(code);
-    result.map(|_| alerts).map_err(|error| match error {
-        EspError::InvalidState => ReadError::NotInstalled,
-        EspError::Timeout => ReadError::Timeout,
-        EspError::InvalidArgument => {
-            unreachable!("The pointer to the stack variable shouldn't be null")
-        }
-        _ => unreachable!("All possible return codes should be handled"),
-    })
+    EspError::convert(code).map(|_| alerts).map_err(From::from)
 }
 
 /// Reconfigure which alerts are enabled.
@@ -341,7 +345,7 @@ pub fn reconfigure_alerts(alerts_enabled: u32) -> Result<u32, ()> {
     let result = EspError::convert(code);
     result.map(|_| alerts).map_err(|error| match error {
         EspError::InvalidState => (),
-        _ => unreachable!("All possible return codes should be handled"),
+        _ => unreachable!("twai_reconfigure_alerts' error codes should be handled"),
     })
 }
 
