@@ -1,9 +1,7 @@
 #![no_std]
 #![no_main]
 
-mod error;
-#[allow(dead_code)]
-mod twai;
+use esp_twai::twai;
 
 use esp_idf_sys as _; // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported
 

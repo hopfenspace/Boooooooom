@@ -1,3 +1,7 @@
+//! Wraps esp-idf's twai module with safe functions.
+//!
+//! It also maps their error codes into discrete error enums.
+
 use esp_idf_sys::c_types::c_int;
 use esp_idf_sys::{
     gpio_num_t, twai_clear_receive_queue, twai_clear_transmit_queue, twai_driver_install,
@@ -12,6 +16,11 @@ use esp_idf_sys::{
 
 use crate::error::EspError;
 
+/// The TWAI driver's state.
+///
+/// "Uninstalled" is not included.
+///
+/// It is the rust version of the [twai_state_t] C enum.
 #[derive(Copy, Clone, Debug)]
 pub enum State {
     /// Stopped state. The TWAI controller will not participate in any TWAI bus activities
@@ -39,6 +48,7 @@ impl From<twai_state_t> for State {
 /// Copied from twai.h
 const TWAI_IO_UNUSED: gpio_num_t = -1;
 
+/// Commonly used timing configuration resulting in 1 kbits
 pub const TIMING_1KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 4000,
     tseg_1: 15,
@@ -46,6 +56,8 @@ pub const TIMING_1KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 5 kbits
 pub const TIMING_5KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 800,
     tseg_1: 15,
@@ -53,6 +65,8 @@ pub const TIMING_5KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 10 kbits
 pub const TIMING_10KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 400,
     tseg_1: 15,
@@ -60,6 +74,8 @@ pub const TIMING_10KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 12.5 kbits
 pub const TIMING_12_5KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 256,
     tseg_1: 16,
@@ -67,6 +83,8 @@ pub const TIMING_12_5KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 16 kbits
 pub const TIMING_16KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 200,
     tseg_1: 16,
@@ -74,6 +92,8 @@ pub const TIMING_16KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 20 kbits
 pub const TIMING_20KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 200,
     tseg_1: 15,
@@ -81,6 +101,8 @@ pub const TIMING_20KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 25 kbits
 pub const TIMING_25KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 128,
     tseg_1: 16,
@@ -88,6 +110,8 @@ pub const TIMING_25KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 50 kbits
 pub const TIMING_50KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 80,
     tseg_1: 15,
@@ -95,6 +119,8 @@ pub const TIMING_50KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 100 kbits
 pub const TIMING_100KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 40,
     tseg_1: 15,
@@ -102,6 +128,8 @@ pub const TIMING_100KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 125 kbits
 pub const TIMING_125KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 32,
     tseg_1: 15,
@@ -109,6 +137,8 @@ pub const TIMING_125KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 250 kbits
 pub const TIMING_250KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 16,
     tseg_1: 15,
@@ -116,6 +146,8 @@ pub const TIMING_250KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 500 kbits
 pub const TIMING_500KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 8,
     tseg_1: 15,
@@ -123,6 +155,8 @@ pub const TIMING_500KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 800 kbits
 pub const TIMING_800KBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 4,
     tseg_1: 16,
@@ -130,6 +164,8 @@ pub const TIMING_800KBITS: twai_timing_config_t = twai_timing_config_t {
     sjw: 3,
     triple_sampling: false,
 };
+
+/// Commonly used timing configuration resulting in 1 Mbits
 pub const TIMING_1MBITS: twai_timing_config_t = twai_timing_config_t {
     brp: 4,
     tseg_1: 15,
@@ -138,12 +174,16 @@ pub const TIMING_1MBITS: twai_timing_config_t = twai_timing_config_t {
     triple_sampling: false,
 };
 
+/// Filter configuration which accepts everything
 pub const FILTER_ACCEPT_ALL: twai_filter_config_t = twai_filter_config_t {
     acceptance_code: 0,
     acceptance_mask: 0xFFFFFFFF,
     single_filter: true,
 };
 
+/// In normal mode the driver can transmit and receive messages normally.
+///
+/// Used as argument in [default_config]
 pub const NORMAL_MODE: twai_mode_t = twai_mode_t_TWAI_MODE_NORMAL;
 
 /// Get the minimal required config to install the TWAI driver.

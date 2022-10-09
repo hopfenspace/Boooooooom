@@ -1,9 +1,11 @@
-/// Map esp_err_t into an enum
-///
-/// https://github.com/espressif/esp-idf/blob/master/components/esp_common/include/esp_err.h
-///
+//! Maps [esp_err_t] into an [enum]
+//!
+//! https://github.com/espressif/esp-idf/blob/master/components/esp_common/include/esp_err.h
+//!
+//! [enum]: EspError
 use core::ffi::CStr;
 use core::fmt;
+
 use esp_idf_sys::{
     esp_err_t, esp_err_to_name, ESP_ERR_INVALID_ARG, ESP_ERR_INVALID_CRC, ESP_ERR_INVALID_MAC,
     ESP_ERR_INVALID_RESPONSE, ESP_ERR_INVALID_SIZE, ESP_ERR_INVALID_STATE, ESP_ERR_INVALID_VERSION,
