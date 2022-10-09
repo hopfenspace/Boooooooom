@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 
+use esp_twai::message;
 use esp_twai::twai;
 
 use esp_idf_sys as _; // If using the `binstart` feature of `esp-idf-sys`, always keep this module imported
@@ -28,21 +29,23 @@ fn main() {
     }
     info!("TWAI started");
 
-    let mut message = esp_idf_sys::twai_message_t::default();
-    message.data_length_code = 8;
-    message.data.copy_from_slice("Kuchen?!".as_bytes());
-    if let Err(_) = twai::transmit(&message, 0) {
+    let msg = message::Message {
+        identifier: message::Identifier::Normal(0),
+        data: message::Data::Borrowed("Kuchen?!".as_bytes()),
+        single_shot: false,
+        self_reception: false,
+    };
+    if let Err(_) = twai::transmit(&msg.into(), 0) {
         error!("Couldn't push message to transmit");
     }
     info!("Send message");
 
     match twai::receive(1_000) {
-        Ok(message) => {
-            let length = message.data_length_code.max(8) as usize;
-            let data = &message.data[0..length];
-            match core::str::from_utf8(data) {
+        Ok(msg) => {
+            let msg = message::Message::from(msg);
+            match core::str::from_utf8(&msg.data) {
                 Ok(string) => info!("Received message: \"{}\"", string),
-                Err(_) => error!("Couldn't decode message: {:?}", data),
+                Err(_) => error!("Couldn't decode message: {:?}", msg.data),
             }
         }
         Err(_) => error!("Couldn't receive message"),
