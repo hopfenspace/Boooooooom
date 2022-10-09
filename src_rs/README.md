@@ -1,4 +1,24 @@
-# Esp prototyping repo
+# RUUUUUUUUMMST
+
+BOOOOOOOOM but rust <3
+
+## Install toolchain
+
+We used [espup](https://github.com/esp-rs/espup) to install the esp toolchain:
+
+```
+cargo install espup --git https://github.com/esp-rs/espup
+```
+
+```
+espup install
+```
+
+Remember to run before compiling:
+
+```bash
+source export-esp.sh
+```
 
 ## Documentation
 

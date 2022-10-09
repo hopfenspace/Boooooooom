@@ -4,6 +4,11 @@
 .pio/
 platformio.ini
 
+# Rust
+target/
+.embuild/
+Cargo.lock
+
 # Python
 venv/
 __pycache__/
