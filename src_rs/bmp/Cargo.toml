@@ -1,0 +1,13 @@
+[package]
+name = "bmp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+log = { version = "0.4", default-features = false }
+esp-idf-sys = { version = "0.31.6", default-features = false, features = ["native"] }
+esp-twai = { version = "0.1.0", path = "../esp-twai" }
+
+[build-dependencies]
+embuild = "0.30.3"
+anyhow = "1"
