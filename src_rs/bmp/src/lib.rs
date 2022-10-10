@@ -2,19 +2,117 @@
 #![no_std]
 #![warn(missing_docs)]
 
+use esp_twai::message::Identifier;
+
+/// The bomb transmission unit defines a message's sender, recipient and type.
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
+pub struct BombTransmissionUnit {
+    /// 3 bits | 4 bits | 4 bits  | 8 bits   | 1 bit | 12 bits
+    ///  empty | SND ID | RECV ID | MSG TYPE | EOT   | reserved (by BMP)
+    data: u32,
+}
+impl BombTransmissionUnit {
+    /// Get an empty bomb transmission unit
+    pub const fn new() -> Self {
+        BombTransmissionUnit { data: 0 }
+    }
+
+    /// Get the `sender` field
+    ///
+    /// Only the 4 low bits are actually used
+    pub const fn get_sender(&self) -> u8 {
+        let snd = self.data & (0b1111 << 25);
+        (snd >> 25) as u8
+    }
+
+    /// Get the `receiver` field
+    ///
+    /// Only the 4 low bits are actually used
+    pub const fn get_receiver(&self) -> u8 {
+        let recv = self.data & (0b1111 << 21);
+        (recv >> 21) as u8
+    }
+
+    /// Get the `message_type` field
+    pub const fn get_message_type(&self) -> u8 {
+        let msg_type = self.data & (0b11111111 << 13);
+        (msg_type >> 13) as u8
+    }
+
+    /// Get the `end_of_transmission` flag
+    pub const fn get_end_of_transmission(&self) -> bool {
+        let eot = self.data & (1 << 12);
+        eot != 0
+    }
+
+    /// Set the `sender` field
+    ///
+    /// Only the 4 low bits are actually used
+    pub fn set_sender(&mut self, snd: u8) {
+        let snd = (snd as u32 & 0b1111) << 25;
+        self.data &= !(0b1111 << 25);
+        self.data |= snd;
+    }
+
+    /// Set the `receiver` field
+    ///
+    /// Only the 4 low bits are actually used
+    pub fn set_receiver(&mut self, recv: u8) {
+        let recv = (recv as u32 & 0b1111) << 21;
+        self.data &= !(0b1111 << 21);
+        self.data |= recv;
+    }
+
+    /// Set the `message_type` field
+    pub fn set_message_type(&mut self, msg_type: u8) {
+        let msg_type = (msg_type as u32 & 0b11111111) << 13;
+        self.data &= !(0b11111111 << 13);
+        self.data |= msg_type;
+    }
+
+    /// Set the `end_of_transmission` flag
+    pub fn set_end_of_transmission(&mut self, eot: bool) {
+        let eot = (eot as u32) << 12;
+        self.data &= !(0b1 << 12);
+        self.data |= eot;
+    }
+}
+impl From<BombTransmissionUnit> for Identifier {
+    fn from(btu: BombTransmissionUnit) -> Self {
+        Identifier::Extended(btu.data)
+    }
+}
+impl TryFrom<Identifier> for BombTransmissionUnit {
+    type Error = NotExtendedFormat;
+
+    fn try_from(value: Identifier) -> Result<Self, Self::Error> {
+        match value {
+            Identifier::Normal(_) => Err(NotExtendedFormat),
+            Identifier::Extended(data) => Ok(BombTransmissionUnit { data }),
+        }
+    }
+}
+/// Simple error stating the [Identifier] is not in the extended format.
+///
+/// Therefore it is not valid for the bomb message protocol.
+pub struct NotExtendedFormat;
+
 /// The message types known to Bomb Message Protocol v1
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum MessageType {
+    /// `0x00` RESET (Master ➜ Slave)
+    /// - _Req_: Reset slave modules
+    /// - _Data_: **illegal**
+    Reset = 0x00,
+
     /// `0x01` INIT (Master ➜ Slave)
     /// - _Req_: Setup the slave module and trigger manual generation
     /// - _Data_: **illegal**
-    Reset = 0x00,
+    Init = 0x01,
 
     /// `0x02` START (Master ➜ Slave)
     /// - _Req_: Start the game and the slave module’s lifecycle, once for every module
     /// - _Data_: **illegal**
-    Init = 0x01,
-
     Start = 0x02,
 
     /// `0x03` DEFUSED (Master ➜ Slave)
