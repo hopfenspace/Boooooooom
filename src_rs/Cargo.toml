@@ -2,7 +2,8 @@
 members = [
 	".",
 	"bmp",
-	"esp-twai",
+    "esp-twai",
+    "rumms-controller",
 ]
 
 [package]
